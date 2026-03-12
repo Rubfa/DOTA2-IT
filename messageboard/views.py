@@ -35,6 +35,7 @@ def thread(request, topic_key):
         "topic_key": topic_key,
         "form": form,
         "roots": roots,
+        "current_page": "messageboard",
     })
 
 

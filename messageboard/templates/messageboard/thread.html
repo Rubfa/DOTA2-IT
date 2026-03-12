@@ -1,12 +1,14 @@
+{% extends 'base.html' %}
 {% load static %}
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>DOTA2 Discussion</title>
-  <link rel="stylesheet" href="{% static 'messageboard/messageboard.css' %}">
-</head>
-<body>
+
+{% block title %}DOTA2 Discussion{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'messageboard/messageboard.css' %}">
+<script src="{% static 'messageboard/message.js' %}"></script>
+{% endblock %}
+
+{% block content %}
   <div class="messageboard">
     <h1>DOTA2 Discussion</h1>
     <div class="topic">Topic: {{ topic_key }}</div>
@@ -41,7 +43,4 @@
       {% endif %}
     </div>
   </div>
-
-  <script src="{% static 'messageboard/message.js' %}"></script>
-</body>
-</html>
+{% endblock %}
