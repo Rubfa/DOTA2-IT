@@ -6,10 +6,13 @@ from .forms import MessageForm
 from .models import Message
 
 
+def messageboard_home(request):
+    return redirect("messageboard:thread", topic_key="home")
+
+
 def thread(request, topic_key):
     form = MessageForm()
 
-    # Fetch all messages in this topic
     qs = (
         Message.objects
         .filter(topic_key=topic_key)
@@ -18,7 +21,6 @@ def thread(request, topic_key):
     )
     all_msgs = list(qs)
 
-    # Build a tree in memory: node = {"msg": Message, "children": []}
     nodes = {m.id: {"msg": m, "children": []} for m in all_msgs}
     roots = []
 
@@ -32,7 +34,7 @@ def thread(request, topic_key):
     return render(request, "messageboard/thread.html", {
         "topic_key": topic_key,
         "form": form,
-        "roots": roots,   # tree roots
+        "roots": roots,
     })
 
 
@@ -46,8 +48,8 @@ def post_message(request, topic_key):
         return redirect("messageboard:thread", topic_key=topic_key)
 
     parent_id = request.POST.get("parent_id") or None
-
     parent = None
+
     if parent_id:
         parent = get_object_or_404(Message, id=parent_id, topic_key=topic_key)
 
