@@ -2,31 +2,35 @@
 {% load static %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/home_mocktrade.css' %}">
-<style>
-    .top-tabs {
-        display: flex;
-        margin-bottom: 20px;
-    }
-    .tab {
-        display: inline-block;
-        padding: 12px 24px;
-        border: 2px solid #333;
-        text-decoration: none;
-        color: black;
-        background: white;
-        font-weight: bold;
-        margin-right: -2px;
-    }
-    .tab.active {
-        background: #eaeaea;
-    }
-            .page-title {
-        font-size: 42px;
-        font-weight: bold;
-        margin-bottom: 30px;
-    }
-</style>
+    <link rel="stylesheet" href="{% static 'css/home_mocktrade.css' %}">
+    <script src="{% static 'messageboard/message.js' %}"></script>
+    <style>
+        .top-tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            display: inline-block;
+            padding: 12px 24px;
+            border: 2px solid #333;
+            text-decoration: none;
+            color: black;
+            background: white;
+            font-weight: bold;
+            margin-right: -2px;
+        }
+
+        .tab.active {
+            background: #eaeaea;
+        }
+
+        .page-title {
+            font-size: 42px;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -51,7 +55,7 @@
             {% if panel == 'mocktrade' %}
                 {% include "includes/home_mocktrade_panel.html" %}
             {% else %}
-                <p>Here is Message Board content.</p>
+                {% include "includes/home_messageboard_panel.html" %}
             {% endif %}
         </div>
     </div>

@@ -6,13 +6,7 @@ from .forms import MessageForm
 from .models import Message
 
 
-def messageboard_home(request):
-    return redirect("messageboard:thread", topic_key="home")
-
-
-def thread(request, topic_key):
-    form = MessageForm()
-
+def build_message_tree(topic_key):
     qs = (
         Message.objects
         .filter(topic_key=topic_key)
@@ -30,6 +24,30 @@ def thread(request, topic_key):
             nodes[m.parent_id]["children"].append(node)
         else:
             roots.append(node)
+
+    return roots
+
+
+def build_messageboard_context(request):
+    topic_key = "home"
+    roots = build_message_tree(topic_key)
+    form = MessageForm()
+
+    return {
+        "roots": roots,
+        "form": form,
+        "topic_key": topic_key,
+        "current_page": "messageboard",
+    }
+
+
+def messageboard_home(request):
+    return redirect("messageboard:thread", topic_key="home")
+
+
+def thread(request, topic_key):
+    form = MessageForm()
+    roots = build_message_tree(topic_key)
 
     return render(request, "messageboard/thread.html", {
         "topic_key": topic_key,
