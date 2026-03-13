@@ -6,29 +6,110 @@
     <title>{% block title %}DOTA2SS{% endblock %}</title>
 
     <style>
-        main{width: 1000px; margin: 0 auto; }
-    </style>
+        main{
+            max-width:1200px;
+            margin: 0 auto; }
 
+        header{
+            border-bottom:2px solid #444;
+        }
+
+        .header-container{
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 15px 30px;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left{
+            display:flex;
+            gap:40px;
+            align-items:center;
+        }
+        .header-right{
+            display: flex;
+            align-items: center;
+        }
+
+        .logo{
+            font-size: 28px;
+            font-weight: bold;
+            text-decoration: none;
+            color: black;
+        }
+
+        .column1,
+        .column2,
+        .login,
+        .logout{
+            text-decoration: none;
+            color: black;
+        }
+
+        footer{
+            border-top:2px solid #444;
+        }
+
+        .footer-container{
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 15px 30px;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
     {% block extra_head %}{% endblock %}
 </head>
 
 <body>
     <header>
-        {% block header %}
-        Dota2SS
-        {% endblock %}
+        <div class="header-container">
+            <div class="header-left">
+                <a href="{% url 'home_test' %}" class="logo">Dota2SS</a>
+
+                <a href="https://buff.163.com/market/dota2" 
+                        class="column1" 
+                        target="_blank"
+                        rel="noopener noreferrer">
+                        Buff Market
+                </a>
+
+                <a href="https://www.dotabuff.com/" 
+                        class="column2" 
+                        target="_blank"
+                        rel="noopener noreferrer">
+                        Match Info
+                </a>
+            </div>
+
+            <div class="header-right">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'logout' %}?next={{ request.path }}" class="login">
+                            Logout
+                        </a>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="logout">Login</a>
+                    {% endif %}
+            </div>
+        </div>
     </header>
 
     <main>
         {% block content %}
-        container
         {% endblock %}
     </main>
 
     <footer>
-        {% block footer %}
-            account setting / using instruction / contact us
-        {% endblock %}
-    <footer>
+        <div class="footer-container">
+            <a>account setting</a>
+            <a>using instruction</a>
+            <a>contact us</a>
+        </div>
+    </footer>
 </body>
 </html>

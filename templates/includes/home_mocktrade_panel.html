@@ -39,11 +39,11 @@
     <div class="panel">
         <div class="panel-title">Trading Zone</div>
 
-        <form class="trade-form" method="post">
+        <form class="trade-form" method="post" action="{% url 'home_test' %}?panel=mocktrade">
             {% csrf_token %}
 
             <div class="form-row">
-                <label for="item_name">Cosmetic Name</label>
+                <label for="item_name">Search cosmetic name</label>
                 <input type="text" id="item_name" name="item_name" placeholder="Enter cosmetic name" value="{{ item_name }}">
             </div>
 

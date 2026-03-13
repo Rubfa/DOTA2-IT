@@ -95,8 +95,7 @@ def handle_sell(trading, item):
     trading.save()
     return price
 
-@login_required
-def index(request):
+def build_mocktrade_context(request):
     trading = MockTrading.objects.first()
     item_name = ""
     price = None
@@ -117,11 +116,16 @@ def index(request):
 
     assets = get_user_assets(trading)
 
-    return render(request, "mocktrade/portfolio.html", {
+    return {
         "username": request.user.username,
         "balance": trading.balance,
         "assets": assets,
         "price": price,
         "item_name": item_name,
         "current_page": "mocktrade",
-    })
+    }
+
+@login_required
+def index(request):
+    context = build_mocktrade_context(request)
+    return render(request, "mocktrade/portfolio.html", context)

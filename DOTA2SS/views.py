@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from mocktrade.views import build_mocktrade_context
 
 def home(request):
     return render(request, 'home.html', {
@@ -6,8 +7,15 @@ def home(request):
     })
 
 def home_test(request):
-    panel = request.GET.get("panel", "mocktrade")
+    panel = request.GET.get("panel", "messageboard")
 
-    return render(request, "hometesting.html", {
-        "panel": panel
-    })
+    context = {
+        "panel": panel,
+    }
+
+    if panel == "mocktrade":
+        context.update(build_mocktrade_context(request))
+    # elif panel == "messageboard":
+        # context.update(function(request))
+
+    return render(request, "hometesting.html", context)

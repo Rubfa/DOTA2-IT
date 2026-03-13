@@ -1,169 +1,31 @@
 {% extends "basetesting.html" %}
-
+{% load static %}
 
 {% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/home_mocktrade.css' %}">
 <style>
-        .top-tabs {
-            display: flex;
-            margin-bottom: 20px;
-        }
-        .tab {
-            display: inline-block;
-            padding: 12px 24px;
-            border: 2px solid #333;
-            text-decoration: none;
-            color: black;
-            background: white;
-            font-weight: bold;
-            margin-right: -2px;
-        }
-        .tab.active {
-            background: #eaeaea;
-        }
-                .page-title {
-            font-size: 42px;
-            font-weight: bold;
-            margin-bottom: 30px;
-        }
-
-        .main-container {
-            display: grid;
-            grid-template-columns: 1fr 2fr 1.4fr;
-            gap: 20px;
-            width: 100%;
-            box-sizing: border-box;
-            align-items: stretch;
-        }
-
-        .panel {
-            background-color: white;
-            border: 2px solid #333;
-            padding: 20px;
-            width: 100%;
-            min-width: 0;
-            box-sizing: border-box;
-        }
-
-        .panel-title {
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
-
-        .section-title {
-            font-size: 20px;
-            font-weight: bold;
-            margin-top: 10px;
-            margin-bottom: 12px;
-        }
-
-        .balance-box {
-            font-size: 28px;
-            font-weight: bold;
-            margin-bottom: 30px;
-        }
-
-        .assets-grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .asset-slot {
-            min-width: 0;
-            min-height: 70px;
-            border: 2px solid #444;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            font-size: 12px;
-            background-color: #fafafa;
-            padding: 4px;
-        }
-
-        .chart-placeholder {
-            height: 330px;
-            border: 2px dashed #666;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            font-size: 22px;
-            color: #555;
-            margin-top: 20px;
-            padding: 20px;
-            width:100%;
-            box-sizing: border-box;
-        }
-
-        .trade-form {
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
-            width: 100%;
-        }
-
-        .form-row {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            width: 100%;
-            min-width: 0;
-        }
-
-        .form-row label {
-            font-size: 20px;
-            font-weight: bold;
-        }
-
-        .form-row input {
-            width: 100%;
-            min-width: 0;
-            padding: 10px;
-            font-size: 16px;
-            border: 2px solid #444;
-        }
-
-        .price-box {
-            min-width: 0;
-            min-height: 46px;
-            border: 2px solid #444;
-            display: flex;
-            align-items: center;
-            padding: 10px;
-            font-size: 18px;
-            background-color: #fafafa;
-        }
-
-        .button-row {
-            display: flex;
-            gap: 20px;
-            width: 100%;
-        }
-
-        .trade-button {
-            flex: 1;
-            min-width: 0;
-            padding: 14px 20px;
-            font-size: 22px;
-            font-weight: bold;
-            border: 2px solid #333;
-            background-color: white;
-            cursor: pointer;
-        }
-
-        .trade-button:hover {
-            background-color: #ececec;
-        }
-
-        .status-message {
-            padding: 12px;
-            border: 2px solid #444;
-            background-color: #fafafa;
-            font-size: 16px;
-        }
+    .top-tabs {
+        display: flex;
+        margin-bottom: 20px;
+    }
+    .tab {
+        display: inline-block;
+        padding: 12px 24px;
+        border: 2px solid #333;
+        text-decoration: none;
+        color: black;
+        background: white;
+        font-weight: bold;
+        margin-right: -2px;
+    }
+    .tab.active {
+        background: #eaeaea;
+    }
+            .page-title {
+        font-size: 42px;
+        font-weight: bold;
+        margin-bottom: 30px;
+    }
 </style>
 {% endblock %}
 
@@ -182,14 +44,6 @@
             <a href="{% url 'home_test' %}?panel=mocktrade"
             class="tab {% if panel == 'mocktrade' %}active{% endif %}">
                 Mock Trading
-            </a>
-
-            <a href="{% url 'login' %}" class="tab">
-                Login
-            </a>
-
-            <a href="{% url 'logout' %}" class="tab">
-                Logout
             </a>
         </div>
 
