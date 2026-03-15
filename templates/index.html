@@ -89,11 +89,12 @@ button {
         <h3>Heroes</h3>
         <div id="heroGrid" class="hero-grid">
             {% for hero in heroes %}
-            <img src="{{ hero.icon }}"
+            <img src="{{ hero.icon|default:'https://via.placeholder.com/60x60?text=Hero' }}"
                  data-type="{{ hero.type }}"
                  data-name="{{ hero.name }}"
                  title="{{ hero.name }}"
                  alt="{{ hero.name }}"
+                 onerror="this.onerror=null;this.src='https://via.placeholder.com/60x60?text=Hero';"
                  onclick="selectHero({{ hero.id }}, '{{ hero.name|escapejs }}')">
             {% endfor %}
         </div>
