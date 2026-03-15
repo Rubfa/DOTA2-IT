@@ -30,7 +30,6 @@ INSTALLED_APPS = [
     'messageboard',
     'mocktrade',
     'visualisation',
-    'items',
 ]
 
 MIDDLEWARE = [
