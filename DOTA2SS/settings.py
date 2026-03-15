@@ -43,6 +43,9 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# Allow same-site pages (e.g. /test/) to embed /items/ in an iframe.
+X_FRAME_OPTIONS = 'SAMEORIGIN'
+
 ROOT_URLCONF = 'DOTA2SS.urls'
 
 TEMPLATES = [

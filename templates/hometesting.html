@@ -5,6 +5,17 @@
     <link rel="stylesheet" href="{% static 'css/home_mocktrade.css' %}">
     <script src="{% static 'messageboard/message.js' %}"></script>
     <style>
+        .home-upper {
+            margin-bottom: 20px;
+        }
+
+        .viz-embed {
+            width: 100%;
+            height: 620px;
+            border: 1px solid #cfcfcf;
+            background: #fff;
+        }
+
         .top-tabs {
             display: flex;
             margin-bottom: 20px;
@@ -35,7 +46,12 @@
 
 {% block content %}
     <div class="home-upper">
-        <a href="/items/">Data Visualisation Page</a>
+        <iframe
+            class="viz-embed"
+            src="/items/"
+            title="Data Visualisation"
+            loading="lazy">
+        </iframe>
     </div>
 
     <div class="home-lower">
