@@ -1,0 +1,183 @@
+<div class="panel">
+    <div class="panel-title">User Time-Balance Line Chart</div>
+
+    {% if portfolio_chart_data.labels %}
+        <div class="chart-toolbar">
+            <button type="button" id="mocktradePortfolioOverviewBtn" class="chart-toggle is-active">
+                Portfolio Overview
+            </button>
+            <div id="mocktradeChartNote" class="chart-note">
+                Click an asset on the left to switch the chart.
+            </div>
+        </div>
+        <div class="chart-meta">
+            <span id="mocktradeChartMetaText">
+                Tracked assets:
+                {% for asset_name in portfolio_chart_data.asset_names %}
+                    {% if not forloop.first %}, {% endif %}{{ asset_name }}
+                {% endfor %}
+            </span>
+        </div>
+        <div class="chart-shell">
+            <canvas id="mocktradePortfolioChart"></canvas>
+        </div>
+        {{ portfolio_chart_data|json_script:"mocktrade-portfolio-chart-data" }}
+        {{ asset_chart_data|json_script:"mocktrade-asset-chart-data" }}
+        <script>
+            (function () {
+                const dataElement = document.getElementById("mocktrade-portfolio-chart-data");
+                const assetDataElement = document.getElementById("mocktrade-asset-chart-data");
+                const canvas = document.getElementById("mocktradePortfolioChart");
+                const metaText = document.getElementById("mocktradeChartMetaText");
+                const chartNote = document.getElementById("mocktradeChartNote");
+                const overviewButton = document.getElementById("mocktradePortfolioOverviewBtn");
+                const assetButtons = Array.from(document.querySelectorAll(".asset-slot-button[data-item-id]"));
+                const searchInput = document.getElementById("item_name");
+
+                if (!dataElement || !assetDataElement || !canvas || typeof Chart === "undefined") {
+                    return;
+                }
+
+                const chartData = JSON.parse(dataElement.textContent);
+                const assetChartData = JSON.parse(assetDataElement.textContent);
+                const ctx = canvas.getContext("2d");
+
+                function setSelectedAsset(itemId) {
+                    assetButtons.forEach(button => {
+                        button.classList.toggle("is-selected", button.dataset.itemId === String(itemId));
+                    });
+                    overviewButton.classList.toggle("is-active", !itemId);
+                }
+
+                if (!window.mocktradePortfolioChartInstance) {
+                    window.mocktradePortfolioChartInstance = new Chart(ctx, {
+                        type: "line",
+                        data: { labels: [], datasets: [] },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: "top",
+                                },
+                                title: {
+                                    display: true,
+                                    text: "",
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    ticks: {
+                                        maxTicksLimit: 6,
+                                    }
+                                },
+                                y: {
+                                    beginAtZero: false,
+                                }
+                            }
+                        }
+                    });
+                }
+
+                function renderPortfolioOverview() {
+                    const chart = window.mocktradePortfolioChartInstance;
+                    chart.data.labels = chartData.labels;
+                    chart.data.datasets = [
+                        {
+                            label: "Cash Balance",
+                            data: chartData.cash,
+                            borderColor: "#2563eb",
+                            backgroundColor: "rgba(37, 99, 235, 0.08)",
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            tension: 0.2,
+                        },
+                        {
+                            label: "Asset Market Value",
+                            data: chartData.asset_values,
+                            borderColor: "#f97316",
+                            backgroundColor: "rgba(249, 115, 22, 0.08)",
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            tension: 0.2,
+                        },
+                        {
+                            label: "Total Account Value",
+                            data: chartData.total_values,
+                            borderColor: "#16a34a",
+                            backgroundColor: "rgba(22, 163, 74, 0.14)",
+                            fill: true,
+                            borderWidth: 3,
+                            pointRadius: 2,
+                            tension: 0.25,
+                        }
+                    ];
+                    chart.options.plugins.title.text = "Portfolio Overview";
+                    chart.update();
+
+                    metaText.textContent = `Tracked assets: ${chartData.asset_names.join(", ")}`;
+                    chartNote.textContent = "Click an asset on the left to switch the chart.";
+                    setSelectedAsset(null);
+                }
+
+                function renderAssetChart(itemId) {
+                    const assetEntry = assetChartData[String(itemId)];
+                    if (!assetEntry || !assetEntry.labels || assetEntry.labels.length === 0) {
+                        return;
+                    }
+
+                    const chart = window.mocktradePortfolioChartInstance;
+                    chart.data.labels = assetEntry.labels;
+                    chart.data.datasets = [
+                        {
+                            label: "Price",
+                            data: assetEntry.prices,
+                            borderColor: "#2563eb",
+                            backgroundColor: "rgba(37, 99, 235, 0.12)",
+                            fill: true,
+                            borderWidth: 3,
+                            pointRadius: 2,
+                            tension: 0.25,
+                        },
+                        {
+                            label: "Quantity",
+                            data: assetEntry.quantities,
+                            borderColor: "#f97316",
+                            backgroundColor: "rgba(249, 115, 22, 0.08)",
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            tension: 0.2,
+                            hidden: true,
+                        }
+                    ];
+                    chart.options.plugins.title.text = `${assetEntry.name} Price Trend`;
+                    chart.update();
+
+                    metaText.textContent = `Selected asset: ${assetEntry.name}`;
+                    chartNote.textContent = "Click Portfolio Overview to switch back.";
+                    setSelectedAsset(itemId);
+
+                    if (searchInput) {
+                        searchInput.value = assetEntry.name;
+                    }
+                }
+
+                overviewButton.addEventListener("click", renderPortfolioOverview);
+
+                assetButtons.forEach(button => {
+                    button.addEventListener("click", () => {
+                        renderAssetChart(button.dataset.itemId);
+                    });
+                });
+
+                renderPortfolioOverview();
+            })();
+        </script>
+    {% else %}
+        <div class="chart-empty">
+            No assets with market history are available yet.
+            <br>
+            Buy a cosmetic first to generate the chart.
+        </div>
+    {% endif %}
+</div>

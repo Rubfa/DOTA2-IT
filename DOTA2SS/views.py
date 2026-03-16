@@ -3,11 +3,12 @@ from mocktrade.views import build_mocktrade_context
 from messageboard.views import build_messageboard_context
 from messageboard.forms import MessageForm
 from messageboard.models import Message
+from visualisation.views import build_visualisation_context
 
 
 def home(request):
-    # Route the root to the integrated visualisation page to avoid missing template errors.
-    return redirect('/items/')
+    # Main homepage: upper visualisation + lower messageboard/mocktrade area.
+    return redirect('/test/')
 
 
 def home_test(request):
@@ -43,9 +44,8 @@ def home_test(request):
 
         return redirect("/test/?panel=messageboard")
 
-    context = {
-        "panel": panel,
-    }
+    context = {"panel": panel}
+    context.update(build_visualisation_context())
 
     if panel == "mocktrade":
         context.update(build_mocktrade_context(request))

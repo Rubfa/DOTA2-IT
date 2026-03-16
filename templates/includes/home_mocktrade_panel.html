@@ -1,3 +1,4 @@
+<div id="home-mocktrade-panel">
 <div class="page-title">Mock Trading</div>
 
 <div class="main-container">
@@ -15,26 +16,27 @@
         <div class="section-title">Account Assets</div>
         <div class="assets-grid">
             {% for asset in assets %}
-                <div class="asset-slot">
+                <button
+                    type="button"
+                    class="asset-slot {% if asset %}asset-slot-button{% else %}asset-slot-empty{% endif %}"
+                    {% if asset %}
+                        data-item-id="{{ asset.id }}"
+                        data-item-name="{{ asset.item_name }}"
+                    {% else %}
+                        disabled
+                    {% endif %}
+                >
                     {% if asset %}
                         {{ asset.item_name }}
                     {% else %}
                         Empty
                     {% endif %}
-                </div>
+                </button>
             {% endfor %}
         </div>
     </div>
 
-    <div class="panel">
-        <div class="panel-title">User Time-Balance Line Chart</div>
-
-        <div class="chart-placeholder">
-            Chart Placeholder
-            <br>
-            (This area will show the user's balance line chart later)
-        </div>
-    </div>
+    {% include "includes/mocktrade_chart_panel.html" %}
 
     <div class="panel">
         <div class="panel-title">Trading Zone</div>
@@ -69,3 +71,28 @@
         </form>
     </div>
 </div>
+</div>
+
+<script>
+(function () {
+    const storageKey = `mocktrade-scroll:${window.location.pathname}${window.location.search}`;
+    const panel = document.getElementById("home-mocktrade-panel");
+    const form = panel ? panel.querySelector(".trade-form") : null;
+
+    if (form) {
+        form.addEventListener("submit", () => {
+            sessionStorage.setItem(storageKey, String(window.scrollY));
+        });
+    }
+
+    const savedScroll = sessionStorage.getItem(storageKey);
+    if (!savedScroll) {
+        return;
+    }
+
+    sessionStorage.removeItem(storageKey);
+    window.requestAnimationFrame(() => {
+        window.scrollTo(0, parseInt(savedScroll, 10));
+    });
+})();
+</script>

@@ -58,3 +58,10 @@ class MockTrading(models.Model):
 
     def __str__(self):
         return f"{self.user.username} Trading Account"
+
+
+# Compatibility aliases used by teammates in existing code.
+Cometics = Cosmetic
+Heros = Hero
+Maket_records = MarketRecord
+Mock_tradings = MockTrading

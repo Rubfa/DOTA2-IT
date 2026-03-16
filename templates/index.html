@@ -26,8 +26,13 @@ body {
 
 .hero-grid img {
     width: 60px;
+    height: 60px;
     margin: 5px;
     cursor: pointer;
+    object-fit: cover;
+    object-position: center top;
+    border: 1px solid #d8dbe2;
+    background: #eef2f7;
 }
 
 .chart-panel {
@@ -47,6 +52,40 @@ button {
     width: 200px;
     padding: 5px;
     margin-bottom: 10px;
+}
+
+.search-results {
+    margin-bottom: 12px;
+    border: 1px solid #d6d6d6;
+    background: #fafafa;
+    min-height: 40px;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.search-results:empty {
+    display: none;
+}
+
+.search-result {
+    display: block;
+    width: 100%;
+    border: 0;
+    border-bottom: 1px solid #ececec;
+    background: transparent;
+    margin: 0;
+    padding: 8px 10px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.search-result:last-child {
+    border-bottom: 0;
+}
+
+.search-result small {
+    display: block;
+    color: #666;
 }
 
 .quick-nav {
@@ -84,17 +123,19 @@ button {
         <button onclick="filterHero('Universal')">Universal</button>
 
         <h3>Search</h3>
-        <input class="search" id="searchHero" onkeyup="searchHero()" placeholder="search hero">
+        <input class="search" id="searchHero" onkeyup="searchHero()" placeholder="search hero or cosmetic">
+        <div id="searchResults" class="search-results"></div>
 
         <h3>Heroes</h3>
         <div id="heroGrid" class="hero-grid">
             {% for hero in heroes %}
-            <img src="{{ hero.icon|default:'https://via.placeholder.com/60x60?text=Hero' }}"
+            <img src="{{ hero.icon }}"
+                 data-hero-id="{{ hero.id }}"
                  data-type="{{ hero.type }}"
                  data-name="{{ hero.name }}"
                  title="{{ hero.name }}"
                  alt="{{ hero.name }}"
-                 onerror="this.onerror=null;this.src='https://via.placeholder.com/60x60?text=Hero';"
+                 onerror="this.onerror=null;this.src='{{ hero.fallback_icon|escapejs }}';"
                  onclick="selectHero({{ hero.id }}, '{{ hero.name|escapejs }}')">
             {% endfor %}
         </div>
@@ -122,14 +163,75 @@ button {
 </div>
 
 <div id="popup"></div>
+{{ search_items|json_script:"visualization-search-items" }}
 
 <script>
 let myChart = null;
 let currentItemId = null;
 let currentTimeRange = "365d";
 let currentChartType = "time-price";
+let currentItemLabel = "";
 let selectedItems = [];
 let currentHeroType = "All";
+const searchItems = JSON.parse(document.getElementById("visualization-search-items").textContent);
+
+function normalizeText(value) {
+    return String(value || "").toLowerCase();
+}
+
+function getCosmeticsForHero(heroId) {
+    return searchItems.filter(item => item.hero_id === heroId);
+}
+
+function heroMatchesQuery(heroId, heroName, query) {
+    if (!query) {
+        return true;
+    }
+
+    if (normalizeText(heroName).includes(query)) {
+        return true;
+    }
+
+    return searchItems.some(item =>
+        item.hero_id === heroId &&
+        (normalizeText(item.name).includes(query) || normalizeText(item.hero_name).includes(query))
+    );
+}
+
+function renderSearchResults(query) {
+    const container = document.getElementById("searchResults");
+    container.innerHTML = "";
+
+    if (!query) {
+        return;
+    }
+
+    const matches = searchItems
+        .filter(item =>
+            normalizeText(item.hero_name).includes(query) ||
+            normalizeText(item.name).includes(query)
+        )
+        .slice(0, 12);
+
+    if (matches.length === 0) {
+        container.innerHTML = '<div class="search-result">No matching cosmetics.</div>';
+        return;
+    }
+
+    matches.forEach(item => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "search-result";
+        button.innerHTML = `${item.name}<small>${item.hero_name} | ${item.hero_type}</small>`;
+        button.addEventListener("click", () => {
+            selectCosmetic(item.id, item.hero_name, item.name);
+            document.getElementById("searchHero").value = item.name;
+            renderSearchResults("");
+            applyHeroFilters();
+        });
+        container.appendChild(button);
+    });
+}
 
 function getQuickItemId() {
     const raw = document.getElementById("quickItemId").value;
@@ -160,14 +262,15 @@ function openApiData() {
 }
 
 function applyHeroFilters() {
-    const input = document.getElementById("searchHero").value.toLowerCase();
+    const input = normalizeText(document.getElementById("searchHero").value);
     const heroGrid = document.getElementById("heroGrid");
     const images = heroGrid.getElementsByTagName("img");
 
     for (let i = 0; i < images.length; i++) {
-        const heroName = images[i].getAttribute("data-name").toLowerCase();
+        const heroId = parseInt(images[i].getAttribute("data-hero-id"), 10);
+        const heroName = images[i].getAttribute("data-name");
         const heroType = images[i].getAttribute("data-type");
-        const matchesSearch = heroName.includes(input);
+        const matchesSearch = heroMatchesQuery(heroId, heroName, input);
         const matchesType = currentHeroType === "All" || heroType === currentHeroType;
 
         images[i].style.display = matchesSearch && matchesType ? "" : "none";
@@ -176,6 +279,7 @@ function applyHeroFilters() {
 
 function searchHero() {
     applyHeroFilters();
+    renderSearchResults(normalizeText(document.getElementById("searchHero").value));
 }
 
 function filterHero(type) {
@@ -184,39 +288,38 @@ function filterHero(type) {
 }
 
 function selectHero(heroId, heroName) {
-    fetch(`/get_cosmetics/${heroId}/`)
-        .then(response => response.json())
-        .then(cosmetics => {
-            if (cosmetics.length === 0) {
-                alert("This hero has no cosmetic data yet.");
-                return;
-            }
+    const cosmetics = getCosmeticsForHero(heroId);
 
-            let html = `<div style="position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-                        background:white; padding:20px; border:2px solid #333; z-index:1000;">
-                        <h3>Select a cosmetic for ${heroName}</h3>
-                        <ul style="list-style:none; padding:0;">`;
+    if (cosmetics.length === 0) {
+        alert("This hero has no cosmetic data yet.");
+        return;
+    }
 
-            cosmetics.forEach(cosmetic => {
-                html += `<li style="padding:5px; cursor:pointer;"
-                         onclick="selectCosmetic(${cosmetic.id}, '${heroName}', '${String(cosmetic.name).replace(/'/g, "\\'")}')">
-                         ${cosmetic.name}
-                         </li>`;
-            });
+    let html = `<div style="position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+                background:white; padding:20px; border:2px solid #333; z-index:1000;">
+                <h3>Select a cosmetic for ${heroName}</h3>
+                <ul style="list-style:none; padding:0;">`;
 
-            html += `</ul>
-                    <button onclick="closePopup()">Close</button>
-                    </div>
-                    <div onclick="closePopup()"
-                    style="position:fixed; top:0; left:0; width:100%; height:100%;
-                    background:rgba(0,0,0,0.5); z-index:999;"></div>`;
+    cosmetics.forEach(cosmetic => {
+        html += `<li style="padding:5px; cursor:pointer;"
+                 onclick="selectCosmetic(${cosmetic.id}, '${heroName}', '${String(cosmetic.name).replace(/'/g, "\\'")}')">
+                 ${cosmetic.name}
+                 </li>`;
+    });
 
-            document.getElementById("popup").innerHTML = html;
-        });
+    html += `</ul>
+            <button onclick="closePopup()">Close</button>
+            </div>
+            <div onclick="closePopup()"
+            style="position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(0,0,0,0.5); z-index:999;"></div>`;
+
+    document.getElementById("popup").innerHTML = html;
 }
 
 function selectCosmetic(cosmeticId, heroName, cosmeticName) {
     currentItemId = cosmeticId;
+    currentItemLabel = `${heroName} - ${cosmeticName}`;
 
     const item = { id: cosmeticId, hero: heroName, name: cosmeticName };
     const exists = selectedItems.find(selected => selected.id === cosmeticId);
@@ -272,6 +375,11 @@ function loadChart(chartType) {
     fetch(`/api/items/${currentItemId}/history/?range=${currentTimeRange}`)
         .then(response => response.json())
         .then(data => {
+            if (!Array.isArray(data.labels) || data.labels.length === 0) {
+                alert("No market data found for this cosmetic.");
+                return;
+            }
+
             const ctx = document.getElementById("chart").getContext("2d");
 
             if (myChart) {
@@ -285,7 +393,7 @@ function loadChart(chartType) {
                     responsive: true,
                     plugins: {
                         legend: { display: true },
-                        title: { display: true, text: chartType.toUpperCase() }
+                        title: { display: true, text: `${currentItemLabel} | ${chartType.toUpperCase()}` }
                     }
                 }
             };
@@ -298,6 +406,7 @@ function loadChart(chartType) {
                             label: "Price",
                             data: data.prices,
                             borderColor: "rgb(75, 192, 192)",
+                            pointRadius: 2,
                             tension: 0.1
                         },
                         {
@@ -305,6 +414,7 @@ function loadChart(chartType) {
                             data: data.trend_price,
                             borderColor: "rgb(255, 99, 132)",
                             borderDash: [5, 5],
+                            pointRadius: 0,
                             tension: 0.1
                         }
                     ]
@@ -317,13 +427,16 @@ function loadChart(chartType) {
                             label: "Quantity",
                             data: data.quantities,
                             borderColor: "rgb(54, 162, 235)",
-                            tension: 0.1
+                            pointRadius: 0,
+                            stepped: true,
+                            tension: 0
                         },
                         {
                             label: "Quantity Trend",
                             data: data.trend_qty,
                             borderColor: "rgb(255, 159, 64)",
                             borderDash: [5, 5],
+                            pointRadius: 0,
                             tension: 0.1
                         }
                     ]
@@ -353,6 +466,18 @@ function loadChart(chartType) {
             alert("Failed to load chart data.");
         });
 }
+
+function initDefaultChart() {
+    if (searchItems.length === 0) {
+        return;
+    }
+
+    const firstItem = searchItems[0];
+    selectCosmetic(firstItem.id, firstItem.hero_name, firstItem.name);
+}
+
+applyHeroFilters();
+initDefaultChart();
 </script>
 </body>
 </html>

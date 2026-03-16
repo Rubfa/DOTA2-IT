@@ -3,6 +3,7 @@
 {% block title %}Mock Trading{% endblock %}
 
 {% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
         .page-title {
             font-size: 42px;
@@ -65,9 +66,74 @@
             font-size: 12px;
             background-color: #fafafa;
             padding: 4px;
+            margin: 0;
+            font-family: inherit;
+            line-height: 1.2;
         }
 
-        .chart-placeholder {
+        .asset-slot-button {
+            cursor: pointer;
+        }
+
+        .asset-slot-button.is-selected {
+            background: #111;
+            color: #fff;
+            border-color: #111;
+        }
+
+        .asset-slot-empty {
+            color: #666;
+            cursor: default;
+        }
+
+        .asset-slot:disabled {
+            opacity: 1;
+        }
+
+        .chart-meta {
+            font-size: 14px;
+            color: #444;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .chart-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .chart-note {
+            font-size: 13px;
+            color: #555;
+            flex: 1;
+        }
+
+        .chart-toggle {
+            border: 2px solid #333;
+            background: #fff;
+            padding: 8px 12px;
+            font-size: 13px;
+            font-weight: bold;
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .chart-toggle.is-active {
+            background: #111;
+            color: #fff;
+        }
+
+        .chart-shell {
+            height: 330px;
+            border: 2px solid #444;
+            background: #fafafa;
+            padding: 12px;
+        }
+
+        .chart-empty {
             height: 330px;
             border: 2px dashed #666;
             display: flex;
@@ -152,6 +218,7 @@
 {% endblock %}
 
 {% block content %}
+    <div id="mocktrade-page">
     <div class="page-title">Mock Trading</div>
 
     <div class="main-container">
@@ -170,33 +237,34 @@
             <div class="section-title">Account Assets</div>
             <div class="assets-grid">
                 {% for asset in assets %}
-                    <div class="asset-slot">
+                    <button
+                        type="button"
+                        class="asset-slot {% if asset %}asset-slot-button{% else %}asset-slot-empty{% endif %}"
+                        {% if asset %}
+                            data-item-id="{{ asset.id }}"
+                            data-item-name="{{ asset.item_name }}"
+                        {% else %}
+                            disabled
+                        {% endif %}
+                    >
                         {% if asset %}
                             {{ asset.item_name }}
                         {% else %}
                             Empty
                         {% endif %}
-                    </div>
+                    </button>
                 {% endfor %}
             </div>
         </div>
 
         <!-- Center Panel -->
-        <div class="panel">
-            <div class="panel-title">User Time-Balance Line Chart</div>
-
-            <div class="chart-placeholder">
-                Chart Placeholder
-                <br>
-                (This area will show the user's balance line chart later)
-            </div>
-        </div>
+        {% include "includes/mocktrade_chart_panel.html" %}
 
         <!-- Right Panel -->
         <div class="panel">
             <div class="panel-title">Trading Zone</div>
 
-            <form class="trade-form" method="post">
+            <form class="trade-form" method="post" action="{% url 'mocktrade:index' %}">
                 {% csrf_token %}
 
                 <div class="form-row">
@@ -226,4 +294,29 @@
             </form>
         </div>
     </div>
+    </div>
+
+    <script>
+        (function () {
+            const storageKey = `mocktrade-scroll:${window.location.pathname}${window.location.search}`;
+            const page = document.getElementById("mocktrade-page");
+            const form = page ? page.querySelector(".trade-form") : null;
+
+            if (form) {
+                form.addEventListener("submit", () => {
+                    sessionStorage.setItem(storageKey, String(window.scrollY));
+                });
+            }
+
+            const savedScroll = sessionStorage.getItem(storageKey);
+            if (!savedScroll) {
+                return;
+            }
+
+            sessionStorage.removeItem(storageKey);
+            window.requestAnimationFrame(() => {
+                window.scrollTo(0, parseInt(savedScroll, 10));
+            });
+        })();
+    </script>
 {% endblock %}
