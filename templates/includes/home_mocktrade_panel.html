@@ -70,102 +70,107 @@
             </div>
         </form>
     </div>
-</div>
-</div>
+    <script>
+    (function () {
+        const storageKey = `mocktrade-scroll:${window.location.pathname}${window.location.search}`;
+        const panel = document.getElementById("home-mocktrade-panel");
+        const form = panel ? panel.querySelector(".trade-form") : null;
 
-<script>
-(function () {
-    const storageKey = `mocktrade-scroll:${window.location.pathname}${window.location.search}`;
-    const panel = document.getElementById("home-mocktrade-panel");
-    const form = panel ? panel.querySelector(".trade-form") : null;
-
-    const savedScroll = sessionStorage.getItem(storageKey);
-    if (!savedScroll) {
-        // Keep going: the async search handler below should still initialize.
-    } else {
-        sessionStorage.removeItem(storageKey);
-        window.requestAnimationFrame(() => {
-            window.scrollTo(0, parseInt(savedScroll, 10));
-        });
-    }
-
-    if (!panel || !form) {
-        return;
-    }
-
-    function activateScripts(container) {
-        const scripts = Array.from(container.querySelectorAll("script"));
-
-        scripts.forEach((oldScript) => {
-            const newScript = document.createElement("script");
-
-            Array.from(oldScript.attributes).forEach((attribute) => {
-                newScript.setAttribute(attribute.name, attribute.value);
+        const savedScroll = sessionStorage.getItem(storageKey);
+        if (!savedScroll) {
+            // Keep going: the async search handler below should still initialize.
+        } else {
+            sessionStorage.removeItem(storageKey);
+            window.requestAnimationFrame(() => {
+                window.scrollTo(0, parseInt(savedScroll, 10));
             });
+        }
 
-            newScript.textContent = oldScript.textContent;
-            oldScript.parentNode.replaceChild(newScript, oldScript);
-        });
-    }
-
-    function replacePanelHtml(html, scrollY) {
-        const wrapper = document.createElement("div");
-        wrapper.innerHTML = html.trim();
-
-        const nextPanel = wrapper.firstElementChild;
-        if (!nextPanel) {
+        if (!panel || !form || panel.dataset.asyncBound === "1") {
             return;
         }
 
-        panel.replaceWith(nextPanel);
-        activateScripts(nextPanel);
-        window.requestAnimationFrame(() => {
-            window.scrollTo(0, scrollY);
-        });
-    }
+        panel.dataset.asyncBound = "1";
 
-    async function runAsyncAction(action, submitter) {
-        const formData = new FormData(form);
-        const currentScroll = window.scrollY;
+        function activateScripts(container) {
+            const scripts = Array.from(container.querySelectorAll("script"));
 
-        formData.set("action", action);
-        submitter.disabled = true;
+            scripts.forEach((oldScript) => {
+                const newScript = document.createElement("script");
 
-        try {
-            const response = await fetch(form.action, {
-                method: "POST",
-                headers: {
-                    "X-Requested-With": "XMLHttpRequest",
-                },
-                body: formData,
+                Array.from(oldScript.attributes).forEach((attribute) => {
+                    newScript.setAttribute(attribute.name, attribute.value);
+                });
+
+                newScript.textContent = oldScript.textContent;
+                oldScript.parentNode.replaceChild(newScript, oldScript);
             });
-            if (!response.ok) {
-                throw new Error(`Unexpected status: ${response.status}`);
-            }
-
-            const payload = await response.json();
-            if (!payload.html) {
-                throw new Error("Missing HTML payload.");
-            }
-
-            replacePanelHtml(payload.html, currentScroll);
-        } catch (error) {
-            console.error("Mock trading request failed.", error);
-        } finally {
-            submitter.disabled = false;
-        }
-    }
-
-    form.addEventListener("submit", (event) => {
-        const submitter = event.submitter;
-
-        if (submitter && ["search", "buy", "sell"].includes(submitter.value)) {
-            event.preventDefault();
-            runAsyncAction(submitter.value, submitter);
-            return;
         }
 
-        sessionStorage.setItem(storageKey, String(window.scrollY));
-    });
-})();
-</script>
+        function replacePanelHtml(html, scrollY) {
+            const wrapper = document.createElement("div");
+            wrapper.innerHTML = html.trim();
+
+            const nextPanel = wrapper.firstElementChild;
+            if (!nextPanel) {
+                return;
+            }
+
+            if (window.mocktradePortfolioChartInstance) {
+                window.mocktradePortfolioChartInstance.destroy();
+                window.mocktradePortfolioChartInstance = null;
+            }
+
+            panel.replaceWith(nextPanel);
+            activateScripts(nextPanel);
+            window.requestAnimationFrame(() => {
+                window.scrollTo(0, scrollY);
+            });
+        }
+
+        async function runAsyncAction(action, submitter) {
+            const formData = new FormData(form);
+            const currentScroll = window.scrollY;
+
+            formData.set("action", action);
+            submitter.disabled = true;
+
+            try {
+                const response = await fetch(form.action, {
+                    method: "POST",
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest",
+                    },
+                    body: formData,
+                });
+                if (!response.ok) {
+                    throw new Error(`Unexpected status: ${response.status}`);
+                }
+
+                const payload = await response.json();
+                if (!payload.html) {
+                    throw new Error("Missing HTML payload.");
+                }
+
+                replacePanelHtml(payload.html, currentScroll);
+            } catch (error) {
+                console.error("Mock trading request failed.", error);
+            } finally {
+                submitter.disabled = false;
+            }
+        }
+
+        form.addEventListener("submit", (event) => {
+            const submitter = event.submitter;
+
+            if (submitter && ["search", "buy", "sell"].includes(submitter.value)) {
+                event.preventDefault();
+                runAsyncAction(submitter.value, submitter);
+                return;
+            }
+
+            sessionStorage.setItem(storageKey, String(window.scrollY));
+        });
+    })();
+    </script>
+</div>

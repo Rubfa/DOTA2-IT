@@ -158,13 +158,20 @@ def remove_item_from_slot(trading, item):
 def handle_search(item):
     if not item:
         return "Not Found"
-    return get_item_price(item)
+
+    price = get_item_price(item)
+    if price is None:
+        return "No market history available"
+
+    return price
 
 def handle_buy(trading, item):
     if not item:
         return "Not Found"
 
     price = get_item_price(item)
+    if price is None:
+        return "No market history available"
 
     if trading.balance < price:
         return "Not enough balance"
@@ -183,6 +190,8 @@ def handle_sell(trading, item):
         return "Not Found"
 
     price = get_item_price(item)
+    if price is None:
+        return "No market history available"
 
     removed = remove_item_from_slot(trading, item)
 
