@@ -3,7 +3,7 @@
 
     {% if user.is_authenticated %}
     <div class="post-box">
-        <form method="POST" action="{% url 'home_test' %}?panel=messageboard">
+        <form method="POST" action="{% url 'home_test' %}?panel=messageboard" class="post-form">
             {% csrf_token %}
             {{ form.text }}
             <div class="counter" data-mb-counter>0/200</div>

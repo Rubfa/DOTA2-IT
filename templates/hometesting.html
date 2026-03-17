@@ -115,19 +115,21 @@
     </div>
 
     <div class="home-lower" id="home-lower">
-        <div class="top-tabs">
+        <div class="top-tabs" id="home-panel-tabs">
             <a href="{% url 'home_test' %}?panel=messageboard#home-lower"
-            class="tab {% if panel == 'messageboard' %}active{% endif %}">
+            class="tab {% if panel == 'messageboard' %}active{% endif %}"
+            data-panel="messageboard">
                 Message board
             </a>
 
             <a href="{% url 'home_test' %}?panel=mocktrade#home-lower"
-            class="tab {% if panel == 'mocktrade' %}active{% endif %}">
+            class="tab {% if panel == 'mocktrade' %}active{% endif %}"
+            data-panel="mocktrade">
                 Mock Trading
             </a>
         </div>
 
-        <div class="switch-content">
+        <div class="switch-content" id="home-switch-content">
             {% if panel == 'mocktrade' %}
                 {% include "includes/home_mocktrade_panel.html" %}
             {% else %}
@@ -135,5 +137,110 @@
             {% endif %}
         </div>
     </div>
+
+    <script>
+    (function () {
+        const homeLower = document.getElementById("home-lower");
+        const tabs = document.getElementById("home-panel-tabs");
+        const switchContent = document.getElementById("home-switch-content");
+
+        if (!homeLower || !tabs || !switchContent) {
+            return;
+        }
+
+        let requestToken = 0;
+
+        function activateScripts(container) {
+            const scripts = Array.from(container.querySelectorAll("script"));
+
+            scripts.forEach((oldScript) => {
+                const newScript = document.createElement("script");
+
+                Array.from(oldScript.attributes).forEach((attribute) => {
+                    newScript.setAttribute(attribute.name, attribute.value);
+                });
+
+                newScript.textContent = oldScript.textContent;
+                oldScript.parentNode.replaceChild(newScript, oldScript);
+            });
+        }
+
+        function updateActiveTab(panel) {
+            tabs.querySelectorAll(".tab").forEach((tab) => {
+                tab.classList.toggle("active", tab.dataset.panel === panel);
+            });
+        }
+
+        function initialiseDynamicPanel(panel) {
+            if (panel === "messageboard" && typeof window.initMessageboardUI === "function") {
+                window.initMessageboardUI(switchContent);
+            }
+        }
+
+        async function loadPanel(targetUrl, options) {
+            const settings = options || {};
+            const pushHistory = settings.pushHistory !== false;
+            const fetchUrl = new URL(targetUrl, window.location.origin);
+            const nextPanel = fetchUrl.searchParams.get("panel") || "messageboard";
+            const currentToken = ++requestToken;
+
+            fetchUrl.hash = "";
+
+            try {
+                const response = await fetch(fetchUrl.toString(), {
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest",
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Unexpected status: ${response.status}`);
+                }
+
+                const payload = await response.json();
+                if (!payload.html) {
+                    throw new Error("Missing panel HTML.");
+                }
+
+                if (currentToken !== requestToken) {
+                    return;
+                }
+
+                switchContent.innerHTML = payload.html.trim();
+                activateScripts(switchContent);
+
+                const resolvedPanel = payload.panel || nextPanel;
+                updateActiveTab(resolvedPanel);
+                initialiseDynamicPanel(resolvedPanel);
+
+                if (pushHistory) {
+                    fetchUrl.searchParams.set("panel", resolvedPanel);
+                    fetchUrl.hash = "home-lower";
+                    window.history.pushState({ panel: resolvedPanel }, "", fetchUrl.toString());
+                }
+            } catch (error) {
+                console.error("Home panel request failed.", error);
+                window.location.href = targetUrl;
+            }
+        }
+
+        tabs.addEventListener("click", (event) => {
+            const tab = event.target.closest(".tab[data-panel]");
+
+            if (!tab) {
+                return;
+            }
+
+            event.preventDefault();
+            loadPanel(tab.href);
+        });
+
+        window.addEventListener("popstate", () => {
+            loadPanel(window.location.href, { pushHistory: false });
+        });
+
+        initialiseDynamicPanel("{{ panel }}");
+    })();
+    </script>
 {% endblock %}
 

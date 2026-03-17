@@ -5,6 +5,9 @@
     var textarea = scope.querySelector("textarea");
     var counter = scope.querySelector("[data-mb-counter]");
     if (!textarea || !counter) return;
+    if (textarea.dataset.mbCounterBound === "1") return;
+
+    textarea.dataset.mbCounterBound = "1";
 
     var max = parseInt(textarea.getAttribute("maxlength") || "0", 10);
 
@@ -17,9 +20,17 @@
     update();
   }
 
-  document.querySelectorAll("form.post-form, form.reply-form").forEach(function (f) {
-    bindCounter(f);
-  });
+  function init(scope) {
+    var root = scope || document;
+
+    root.querySelectorAll("form.post-form, form.reply-form").forEach(function (f) {
+      bindCounter(f);
+    });
+  }
+
+  window.initMessageboardUI = init;
+
+  init(document);
 
   document.addEventListener("click", function (e) {
     var reply = e.target.closest(".reply-link");

@@ -7,6 +7,36 @@ from messageboard.forms import MessageForm
 from messageboard.models import Message
 from visualisation.views import build_visualisation_context
 
+PANEL_TEMPLATES = {
+    "messageboard": "includes/home_messageboard_panel.html",
+    "mocktrade": "includes/home_mocktrade_panel.html",
+}
+
+
+def normalize_panel(panel):
+    return panel if panel in PANEL_TEMPLATES else "messageboard"
+
+
+def build_panel_context(request, panel):
+    context = {"panel": panel}
+
+    if panel == "mocktrade":
+        context.update(build_mocktrade_context(request))
+    else:
+        context.update(build_messageboard_context(request))
+
+    return context
+
+
+def render_panel_html(request, panel, context=None):
+    panel = normalize_panel(panel)
+    panel_context = context if context is not None else build_panel_context(request, panel)
+    return render_to_string(
+        PANEL_TEMPLATES[panel],
+        panel_context,
+        request=request,
+    )
+
 
 def home(request):
     # Main homepage: upper visualisation + lower messageboard/mocktrade area.
@@ -14,20 +44,22 @@ def home(request):
 
 
 def home_test(request):
-    panel = request.GET.get("panel", "messageboard")
+    panel = normalize_panel(request.GET.get("panel", "messageboard"))
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
+    if request.method == "GET" and is_ajax:
+        context = build_panel_context(request, panel)
+        html = render_panel_html(request, panel, context)
+        return JsonResponse({"panel": panel, "html": html})
 
     if (
         request.method == "POST"
         and panel == "mocktrade"
-        and request.headers.get("X-Requested-With") == "XMLHttpRequest"
+        and is_ajax
     ):
-        context = build_mocktrade_context(request)
-        html = render_to_string(
-            "includes/home_mocktrade_panel.html",
-            context,
-            request=request,
-        )
-        return JsonResponse({"html": html})
+        context = build_panel_context(request, panel)
+        html = render_panel_html(request, panel, context)
+        return JsonResponse({"panel": panel, "html": html})
 
     if request.method == "POST" and panel == "messageboard":
         if request.user.is_authenticated:
@@ -59,12 +91,7 @@ def home_test(request):
 
         return redirect("/test/?panel=messageboard")
 
-    context = {"panel": panel}
+    context = build_panel_context(request, panel)
     context.update(build_visualisation_context())
-
-    if panel == "mocktrade":
-        context.update(build_mocktrade_context(request))
-    elif panel == "messageboard":
-        context.update(build_messageboard_context(request))
 
     return render(request, "hometesting.html", context)
