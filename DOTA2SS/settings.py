@@ -27,6 +27,14 @@ def env_list(name, default=None):
     return [item.strip() for item in value.split(',') if item.strip()]
 
 
+def unique_list(values):
+    result = []
+    for value in values:
+        if value and value not in result:
+            result.append(value)
+    return result
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
@@ -39,9 +47,17 @@ SECRET_KEY = os.getenv(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env_bool('DJANGO_DEBUG', True)
 
-ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS', ['localhost', '127.0.0.1'])
-CSRF_TRUSTED_ORIGINS = env_list('DJANGO_CSRF_TRUSTED_ORIGINS')
-ENABLE_HTTPS = env_bool('DJANGO_ENABLE_HTTPS', not DEBUG)
+RAILWAY_PUBLIC_DOMAIN = os.getenv('RAILWAY_PUBLIC_DOMAIN')
+RAILWAY_VOLUME_MOUNT_PATH = os.getenv('RAILWAY_VOLUME_MOUNT_PATH')
+
+ALLOWED_HOSTS = unique_list(
+    env_list('DJANGO_ALLOWED_HOSTS', ['localhost', '127.0.0.1']) + [RAILWAY_PUBLIC_DOMAIN]
+)
+CSRF_TRUSTED_ORIGINS = unique_list(
+    env_list('DJANGO_CSRF_TRUSTED_ORIGINS')
+    + ([f'https://{RAILWAY_PUBLIC_DOMAIN}'] if RAILWAY_PUBLIC_DOMAIN else [])
+)
+ENABLE_HTTPS = env_bool('DJANGO_ENABLE_HTTPS', (not DEBUG) or bool(RAILWAY_PUBLIC_DOMAIN))
 
 
 # Application definition
@@ -62,6 +78,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -100,7 +117,10 @@ WSGI_APPLICATION = 'DOTA2SS.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'NAME': os.getenv(
+            'DJANGO_SQLITE_PATH',
+            os.path.join(RAILWAY_VOLUME_MOUNT_PATH or BASE_DIR, 'db.sqlite3'),
+        ),
     }
 }
 
@@ -145,6 +165,11 @@ LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/test/'
 LOGOUT_REDIRECT_URL = '/test/'
 STATICFILES_DIRS = [STATIC_DIR]
+STORAGES = {
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
 
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

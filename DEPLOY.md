@@ -181,3 +181,20 @@ If you use a platform such as Render, Railway, or a similar panel:
 - Environment variables: use the values from `.env.example`
 
 If the platform does not provide persistent disk storage, do not keep using SQLite long-term. Move the database to PostgreSQL first.
+
+## 10. Fastest Path: Railway With Your Existing db.sqlite3
+
+This repository already contains `db.sqlite3`, and `serve.py` is prepared to:
+
+- copy that database into the mounted persistent volume on first deploy
+- run migrations automatically
+- collect static files automatically
+
+Recommended Railway setup:
+
+1. Create a new project from your GitHub repository.
+2. Add a Volume and mount it to `/app/data`.
+3. Set `DJANGO_SECRET_KEY` in Railway variables.
+4. Keep the start command as `python serve.py`.
+
+Railway automatically provides `PORT`, `RAILWAY_PUBLIC_DOMAIN`, and `RAILWAY_VOLUME_MOUNT_PATH`, so this project can use the Railway public domain and the mounted SQLite path without extra code changes.
