@@ -114,14 +114,14 @@
         {% include "includes/home_visualisation_panel.html" %}
     </div>
 
-    <div class="home-lower">
+    <div class="home-lower" id="home-lower">
         <div class="top-tabs">
-            <a href="{% url 'home_test' %}?panel=messageboard"
+            <a href="{% url 'home_test' %}?panel=messageboard#home-lower"
             class="tab {% if panel == 'messageboard' %}active{% endif %}">
                 Message board
             </a>
 
-            <a href="{% url 'home_test' %}?panel=mocktrade"
+            <a href="{% url 'home_test' %}?panel=mocktrade#home-lower"
             class="tab {% if panel == 'mocktrade' %}active{% endif %}">
                 Mock Trading
             </a>
