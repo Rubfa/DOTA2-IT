@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from mocktrade.views import build_mocktrade_context
 from messageboard.views import build_messageboard_context
@@ -13,6 +14,20 @@ def home(request):
 
 def home_test(request):
     panel = request.GET.get("panel", "messageboard")
+
+    if (
+        request.method == "POST"
+        and panel == "mocktrade"
+        and request.headers.get("X-Requested-With") == "XMLHttpRequest"
+        and request.POST.get("action") == "search"
+    ):
+        context = build_mocktrade_context(request)
+        return JsonResponse(
+            {
+                "price": context["price"],
+                "item_name": context["item_name"],
+            }
+        )
 
     if request.method == "POST" and panel == "messageboard":
         if request.user.is_authenticated:
