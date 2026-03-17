@@ -15,7 +15,7 @@ class MocktradeHomePanelTests(TestCase):
         self.client.force_login(self.user)
         self.url = f"{reverse('home_test')}?panel=mocktrade"
 
-        self.cosmetic = Cosmetic.objects.create(item_name="电棍")
+        self.cosmetic = Cosmetic.objects.create(item_name="Razor Arcana")
         MarketRecord.objects.create(
             item=self.cosmetic,
             date=date(2026, 3, 1),
@@ -26,7 +26,7 @@ class MocktradeHomePanelTests(TestCase):
     def test_ajax_search_returns_price_payload(self):
         response = self.client.post(
             self.url,
-            {"item_name": "电棍", "action": "search"},
+            {"item_name": "Razor Arcana", "action": "search"},
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
 
@@ -34,11 +34,12 @@ class MocktradeHomePanelTests(TestCase):
         payload = response.json()
 
         self.assertEqual(payload["action"], "search")
-        self.assertEqual(payload["item_name"], "电棍")
+        self.assertEqual(payload["item_name"], "Razor Arcana")
         self.assertEqual(payload["price"], "5100.00")
+        self.assertEqual(payload["status_tone"], "success")
 
     def test_buy_assigns_asset_and_updates_balance(self):
-        cheap_item = Cosmetic.objects.create(item_name="测试饰品")
+        cheap_item = Cosmetic.objects.create(item_name="Budget Set")
         MarketRecord.objects.create(
             item=cheap_item,
             date=date(2026, 3, 1),
@@ -48,7 +49,7 @@ class MocktradeHomePanelTests(TestCase):
 
         response = self.client.post(
             self.url,
-            {"item_name": "测试饰品", "action": "buy"},
+            {"item_name": "Budget Set", "action": "buy"},
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
 
@@ -71,7 +72,7 @@ class MocktradeHomePanelTests(TestCase):
 
         response = self.client.post(
             self.url,
-            {"item_name": "电棍", "action": "sell"},
+            {"item_name": "Razor Arcana", "action": "sell"},
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
 
@@ -83,9 +84,22 @@ class MocktradeHomePanelTests(TestCase):
     def test_search_returns_not_found_for_unknown_item(self):
         response = self.client.post(
             self.url,
-            {"item_name": "不存在", "action": "search"},
+            {"item_name": "Missing Cosmetic", "action": "search"},
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["price"], "Not Found")
+        self.assertEqual(response.json()["status_tone"], "warning")
+
+    def test_ajax_get_mocktrade_panel_returns_rendered_html(self):
+        response = self.client.get(
+            self.url,
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+
+        self.assertEqual(payload["panel"], "mocktrade")
+        self.assertIn("home-mocktrade-panel", payload["html"])

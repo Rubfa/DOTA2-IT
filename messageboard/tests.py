@@ -24,6 +24,20 @@ class HomeMessageboardPanelTests(TestCase):
         self.assertEqual(message.topic_key, "home")
         self.assertEqual(message.author, self.user)
 
+    def test_ajax_get_messageboard_panel_returns_html(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            self.url,
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+
+        self.assertEqual(payload["panel"], "messageboard")
+        self.assertIn("Message Board", payload["html"])
+
     def test_author_can_delete_own_message_from_home_panel(self):
         self.client.force_login(self.user)
         message = Message.objects.create(author=self.user, topic_key="home", text="Delete me")
@@ -41,3 +55,52 @@ class HomeMessageboardPanelTests(TestCase):
 
         self.assertEqual(response.status_code, 302)
         self.assertTrue(Message.objects.filter(id=message.id).exists())
+
+    def test_ajax_post_message_returns_rendered_panel_payload(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            self.url,
+            {"text": "AJAX hello", "parent_id": ""},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+
+        self.assertEqual(payload["panel"], "messageboard")
+        self.assertEqual(payload["status_tone"], "success")
+        self.assertIn("AJAX hello", payload["html"])
+        self.assertTrue(Message.objects.filter(text="AJAX hello", topic_key="home").exists())
+
+    def test_ajax_delete_message_returns_success_payload(self):
+        self.client.force_login(self.user)
+        message = Message.objects.create(author=self.user, topic_key="home", text="Remove me")
+
+        response = self.client.post(
+            self.url,
+            {"delete_message_id": message.id},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+
+        self.assertEqual(payload["panel"], "messageboard")
+        self.assertEqual(payload["status_tone"], "success")
+        self.assertFalse(Message.objects.filter(id=message.id).exists())
+
+    def test_ajax_invalid_message_returns_warning_payload(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            self.url,
+            {"text": "", "parent_id": ""},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+
+        self.assertEqual(payload["status_tone"], "warning")
+        self.assertIn("required", payload["status_message"].lower())

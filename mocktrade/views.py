@@ -203,6 +203,53 @@ def handle_sell(trading, item):
     return price
 
 
+def format_price_value(value):
+    if isinstance(value, Decimal):
+        return f"{value:.2f}"
+    return str(value)
+
+
+def build_trade_feedback(action, item_name, result):
+    if not action:
+        return (
+            "Search a cosmetic to view the latest market price, then buy or sell without leaving the page.",
+            "info",
+        )
+
+    display_name = item_name or "this cosmetic"
+    is_price = isinstance(result, Decimal)
+
+    if action == "search":
+        if is_price:
+            return (f"Loaded the latest recorded price for {display_name}.", "success")
+        if result == "Not Found":
+            return (f"{display_name} was not found in the cosmetic list.", "warning")
+        if result == "No market history available":
+            return (f"{display_name} exists, but it has no market history yet.", "warning")
+
+    if action == "buy":
+        if is_price:
+            return (f"Purchased {display_name} for {format_price_value(result)}.", "success")
+        if result == "Not enough balance":
+            return ("Your balance is too low for this purchase.", "error")
+        if result == "No empty slot":
+            return ("Your inventory is full. Sell an item before buying another one.", "warning")
+
+    if action == "sell":
+        if is_price:
+            return (f"Sold {display_name} for {format_price_value(result)}.", "success")
+        if result == "You do not own this item":
+            return (f"You cannot sell {display_name} because it is not in your inventory.", "warning")
+
+    if result == "Not Found":
+        return (f"{display_name} was not found in the cosmetic list.", "warning")
+
+    if result == "No market history available":
+        return (f"{display_name} exists, but it has no market history yet.", "warning")
+
+    return ("The requested trading action could not be completed.", "error")
+
+
 def get_or_create_trading_for_user(request_user):
     username = request_user.username if request_user.is_authenticated else "guest"
     user_account, _ = UserAccount.objects.get_or_create(
@@ -219,6 +266,7 @@ def build_mocktrade_context(request):
     trading = get_or_create_trading_for_user(request.user)
     item_name = ""
     price = None
+    action = None
 
     if request.method == "POST":
         item_name = request.POST.get("item_name", "").strip()
@@ -237,6 +285,7 @@ def build_mocktrade_context(request):
     assets = get_user_assets(trading)
     chart_data = build_portfolio_chart_data(trading)
     asset_chart_data = build_asset_chart_data(trading)
+    trade_status_message, trade_status_tone = build_trade_feedback(action, item_name, price)
 
     return {
         "username": request.user.username,
@@ -246,6 +295,8 @@ def build_mocktrade_context(request):
         "asset_chart_data": asset_chart_data,
         "price": price,
         "item_name": item_name,
+        "trade_status_message": trade_status_message,
+        "trade_status_tone": trade_status_tone,
         "current_page": "mocktrade",
     }
 

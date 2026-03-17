@@ -38,6 +38,21 @@ def render_panel_html(request, panel, context=None):
     )
 
 
+def build_messageboard_ajax_payload(request, status_message, status_tone):
+    context = build_panel_context(request, "messageboard")
+    context.update({
+        "messageboard_status_message": status_message,
+        "messageboard_status_tone": status_tone,
+    })
+    html = render_panel_html(request, "messageboard", context)
+    return {
+        "panel": "messageboard",
+        "html": html,
+        "status_message": status_message,
+        "status_tone": status_tone,
+    }
+
+
 def home(request):
     # Main homepage: upper visualisation + lower messageboard/mocktrade area.
     return redirect('/test/')
@@ -68,6 +83,8 @@ def home_test(request):
             "item_name": context.get("item_name", ""),
             "price": price_display,
             "balance": str(context.get("balance", "")),
+            "status_message": context.get("trade_status_message", ""),
+            "status_tone": context.get("trade_status_tone", "info"),
         })
 
     if request.method == "POST" and panel == "messageboard":
@@ -76,9 +93,24 @@ def home_test(request):
 
             if delete_message_id:
                 msg = get_object_or_404(Message, id=delete_message_id)
+                deleted = False
 
                 if request.user.is_staff or msg.author_id == request.user.id:
                     msg.delete()
+                    deleted = True
+
+                if is_ajax:
+                    if deleted:
+                        return JsonResponse(build_messageboard_ajax_payload(
+                            request,
+                            "Message deleted from the discussion thread.",
+                            "success",
+                        ))
+                    return JsonResponse(build_messageboard_ajax_payload(
+                        request,
+                        "You can only delete your own message.",
+                        "warning",
+                    ))
 
                 return redirect("/test/?panel=messageboard")
 
@@ -97,6 +129,32 @@ def home_test(request):
                     parent=parent,
                     text=form.cleaned_data["text"]
                 )
+
+                if is_ajax:
+                    status_message = "Reply posted to the discussion thread." if parent else "Message posted to the discussion thread."
+                    return JsonResponse(build_messageboard_ajax_payload(
+                        request,
+                        status_message,
+                        "success",
+                    ))
+            elif is_ajax:
+                errors = []
+                for field_errors in form.errors.values():
+                    errors.extend(field_errors)
+
+                status_message = errors[0] if errors else "Your message could not be posted."
+                return JsonResponse(build_messageboard_ajax_payload(
+                    request,
+                    status_message,
+                    "warning",
+                ))
+
+        elif is_ajax:
+            return JsonResponse(build_messageboard_ajax_payload(
+                request,
+                "Log in first to post or delete messages.",
+                "warning",
+            ))
 
         return redirect("/test/?panel=messageboard")
 

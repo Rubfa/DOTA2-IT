@@ -1,8 +1,15 @@
-<div class="messageboard-container">
+<div class="messageboard-container" data-home-messageboard="1">
     <div class="page-title">Message Board</div>
     <p class="messageboard-intro">
         Share quick market observations, reply to classmates, and document trading ideas as the project evolves.
     </p>
+
+    <div
+        class="messageboard-status messageboard-status--{{ messageboard_status_tone|default:'info' }}"
+        data-messageboard-status
+    >
+        {{ messageboard_status_message|default:"Use quick posts and threaded replies to explain why you bought, sold, or tracked a cosmetic." }}
+    </div>
 
     {% if user.is_authenticated %}
     <div class="post-box">

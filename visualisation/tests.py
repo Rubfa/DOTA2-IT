@@ -55,3 +55,20 @@ class ItemHistoryApiTests(TestCase):
         self.assertEqual(payload["quantities"][-3:], [2, 4, 6])
         self.assertEqual(len(payload["trend_price"]), 31)
         self.assertEqual(len(payload["trend_qty"]), 31)
+
+    def test_get_cosmetics_returns_unique_items_for_selected_hero(self):
+        item = Cosmetic.objects.create(item_name="Frost Avalanche")
+        hero = Hero.objects.create(
+            hero_name="Crystal Maiden",
+            hero_type="Intelligence",
+            item1=item,
+            item2=item,
+        )
+
+        response = self.client.get(reverse("get_cosmetics", args=[hero.id]))
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+
+        self.assertEqual(len(payload), 1)
+        self.assertEqual(payload[0]["name"], "Frost Avalanche")

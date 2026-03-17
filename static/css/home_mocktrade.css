@@ -215,10 +215,23 @@
         }
 
         .status-message {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
             padding: 12px;
             border: 2px solid #444;
             background-color: #fafafa;
             font-size: 16px;
+        }
+
+        .status-message::before {
+            content: "";
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background: currentColor;
+            opacity: 0.75;
+            flex-shrink: 0;
         }
 
         .main-container {
@@ -346,6 +359,42 @@
             background-color: #0f172a;
             color: #fff;
             box-shadow: 0 18px 28px rgba(15, 23, 42, 0.1);
+        }
+
+        .trade-button:disabled,
+        .trade-button.is-loading {
+            opacity: 0.7;
+            cursor: wait;
+            transform: none;
+            background: #dbe4ee;
+            color: #526277;
+            box-shadow: none;
+        }
+
+        .status-message {
+            border: 1px solid #d6e0ea;
+            border-radius: 18px;
+            background: #f8fbff;
+            color: #28405f;
+            font-weight: 600;
+        }
+
+        .status-message--success {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+            color: #166534;
+        }
+
+        .status-message--warning {
+            background: #fff7ed;
+            border-color: #fed7aa;
+            color: #9a3412;
+        }
+
+        .status-message--error {
+            background: #fef2f2;
+            border-color: #fecaca;
+            color: #991b1b;
         }
 
         @media (max-width: 1199px) {

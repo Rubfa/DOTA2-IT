@@ -13,14 +13,14 @@
       {% if m.author == user or user.is_staff %}
         <form method="post" action="{% url 'messageboard:delete_message' m.id %}" class="inline-form">
           {% csrf_token %}
-          <button type="submit" onclick="return confirm('Delete this message?');">Delete</button>
+          <button type="submit" class="messageboard-delete-button" data-confirm-delete="1">Delete</button>
         </form>
       {% endif %}
     {% endif %}
   </div>
 
   {% if user.is_authenticated %}
-    <div class="inline-reply" id="reply-box-{{ m.id }}" style="display:none;">
+    <div class="inline-reply is-hidden" id="reply-box-{{ m.id }}">
       <form method="post" action="{% url 'messageboard:post' topic_key %}" class="reply-form">
         {% csrf_token %}
         <textarea name="text" rows="2" maxlength="200" placeholder="Write a reply"></textarea>
@@ -44,7 +44,7 @@
         {% if user.is_authenticated and r.author == user or user.is_staff %}
           <form method="post" action="{% url 'messageboard:delete_message' r.id %}" class="inline-form">
             {% csrf_token %}
-            <button type="submit" onclick="return confirm('Delete this reply?');">Delete</button>
+            <button type="submit" class="messageboard-delete-button" data-confirm-delete="1">Delete</button>
           </form>
         {% endif %}
       </div>

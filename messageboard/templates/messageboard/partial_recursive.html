@@ -1,5 +1,5 @@
 {% with m=node.msg %}
-<div class="msg" style="margin-left: {{ depth }}0px;">
+<div class="msg" style="--messageboard-depth: {{ depth }};">
   <div class="meta">
     <span class="name">{{ m.author.username }}</span>
     <span class="time">{{ m.created_at|date:"Y-m-d H:i" }}</span>
@@ -15,14 +15,14 @@
         <form method="post" action="{% url 'home_test' %}?panel=messageboard" class="inline-form">
          {% csrf_token %}
          <input type="hidden" name="delete_message_id" value="{{ m.id }}">
-         <button type="submit" onclick="return confirm('Delete this message?');">Delete</button>
+         <button type="submit" class="messageboard-delete-button" data-confirm-delete="1">Delete</button>
         </form>
       {% endif %}
     {% endif %}
   </div>
 
   {% if user.is_authenticated %}
-    <div class="inline-reply" id="reply-box-{{ m.id }}" style="display:none">
+    <div class="inline-reply is-hidden" id="reply-box-{{ m.id }}">
         <form method="post" action="{% url 'home_test' %}?panel=messageboard" class="reply-form">
             {% csrf_token %}
             <textarea name="text" rows="2" maxlength="200" placeholder="Write a reply"></textarea>
