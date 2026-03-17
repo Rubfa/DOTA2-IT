@@ -77,6 +77,7 @@
         const form = panel ? panel.querySelector(".trade-form") : null;
         const priceBox = panel ? panel.querySelector("[data-mocktrade-price-box]") : null;
         const itemInput = form ? form.querySelector("#item_name") : null;
+        const formActionUrl = form ? form.getAttribute("action") : null;
 
         const savedScroll = sessionStorage.getItem(storageKey);
         if (!savedScroll) {
@@ -88,7 +89,7 @@
             });
         }
 
-        if (!panel || !form || !priceBox || panel.dataset.asyncBound === "1") {
+        if (!panel || !form || !priceBox || !formActionUrl || panel.dataset.asyncBound === "1") {
             return;
         }
 
@@ -138,7 +139,7 @@
             submitter.disabled = true;
 
             try {
-                const response = await fetch(form.action, {
+                const response = await fetch(formActionUrl, {
                     method: "POST",
                     headers: {
                         "X-Requested-With": "XMLHttpRequest",
