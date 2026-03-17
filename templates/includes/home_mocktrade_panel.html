@@ -51,7 +51,7 @@
 
             <div class="form-row">
                 <label>Cosmetic Price</label>
-                <div class="price-box">
+                <div class="price-box" data-mocktrade-price-box>
                     {% if price %}
                         {{ price }}
                     {% else %}
@@ -75,6 +75,8 @@
         const storageKey = `mocktrade-scroll:${window.location.pathname}${window.location.search}`;
         const panel = document.getElementById("home-mocktrade-panel");
         const form = panel ? panel.querySelector(".trade-form") : null;
+        const priceBox = panel ? panel.querySelector("[data-mocktrade-price-box]") : null;
+        const itemInput = form ? form.querySelector("#item_name") : null;
 
         const savedScroll = sessionStorage.getItem(storageKey);
         if (!savedScroll) {
@@ -86,7 +88,7 @@
             });
         }
 
-        if (!panel || !form || panel.dataset.asyncBound === "1") {
+        if (!panel || !form || !priceBox || panel.dataset.asyncBound === "1") {
             return;
         }
 
@@ -148,6 +150,14 @@
                 }
 
                 const payload = await response.json();
+                if (action === "search") {
+                    priceBox.textContent = payload.price || "-";
+                    if (itemInput && typeof payload.item_name === "string") {
+                        itemInput.value = payload.item_name;
+                    }
+                    return;
+                }
+
                 if (!payload.html) {
                     throw new Error("Missing HTML payload.");
                 }

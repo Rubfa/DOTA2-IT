@@ -59,7 +59,16 @@ def home_test(request):
     ):
         context = build_panel_context(request, panel)
         html = render_panel_html(request, panel, context)
-        return JsonResponse({"panel": panel, "html": html})
+        price = context.get("price")
+        price_display = "-" if price in (None, "") else str(price)
+        return JsonResponse({
+            "panel": panel,
+            "html": html,
+            "action": request.POST.get("action"),
+            "item_name": context.get("item_name", ""),
+            "price": price_display,
+            "balance": str(context.get("balance", "")),
+        })
 
     if request.method == "POST" and panel == "messageboard":
         if request.user.is_authenticated:
