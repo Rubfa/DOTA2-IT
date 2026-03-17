@@ -40,7 +40,6 @@ HERO_SLUGS = {
     "龙骑": "dragon_knight",
 }
 
-<<<<<<< HEAD
 HERO_DISPLAY_NAMES = {
     "CK": "Chaos Knight",
     "DK": "Dragon Knight",
@@ -73,8 +72,6 @@ HERO_DISPLAY_NAMES = {
     "酒仙": "Brewmaster",
     "龙骑": "Dragon Knight",
 }
-=======
->>>>>>> c2003430a6607cb4c801088d4043078675625782
 
 def build_visualisation_context():
     default_icon = (
@@ -84,11 +81,8 @@ def build_visualisation_context():
         "<text x='50%' y='55%' font-size='12' text-anchor='middle' fill='%23374151'>Hero</text>"
         "</svg>"
     )
-<<<<<<< HEAD
     def get_display_name(hero_name):
         return HERO_DISPLAY_NAMES.get(hero_name, hero_name)
-=======
->>>>>>> c2003430a6607cb4c801088d4043078675625782
 
     def get_hero_icon(hero_name):
         hero_slug = HERO_SLUGS.get(hero_name)
@@ -100,11 +94,7 @@ def build_visualisation_context():
     hero_cards = [
         {
             "id": hero.id,
-<<<<<<< HEAD
             "name": get_display_name(hero.hero_name),
-=======
-            "name": hero.hero_name,
->>>>>>> c2003430a6607cb4c801088d4043078675625782
             "type": hero.hero_type,
             "icon": get_hero_icon(hero.hero_name),
             "fallback_icon": default_icon,
@@ -123,11 +113,7 @@ def build_visualisation_context():
                         "id": cosmetic.id,
                         "name": cosmetic.item_name,
                         "hero_id": hero.id,
-<<<<<<< HEAD
                         "hero_name": get_display_name(hero.hero_name),
-=======
-                        "hero_name": hero.hero_name,
->>>>>>> c2003430a6607cb4c801088d4043078675625782
                         "hero_type": hero.hero_type,
                     }
                 )

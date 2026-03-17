@@ -6,7 +6,6 @@ from django.contrib.auth.decorators import login_required
 
 from .models import MockTrading, Cosmetic, MarketRecord, UserAccount
 
-<<<<<<< HEAD
 COSMETIC_NAME_ALIASES = {
     "chaos knight": "CK",
     "dragon knight": "DK",
@@ -39,8 +38,6 @@ COSMETIC_NAME_ALIASES = {
     "brewmaster": "酒仙",
 }
 
-=======
->>>>>>> c2003430a6607cb4c801088d4043078675625782
 def get_user_assets(trading):
     return [
         trading.asset1,
@@ -55,7 +52,6 @@ def get_user_assets(trading):
         trading.asset10,
     ]
 
-<<<<<<< HEAD
 def get_item_by_name(item_name: str) -> Cosmetic:
     if not item_name:
         return None
@@ -77,10 +73,6 @@ def get_item_by_name(item_name: str) -> Cosmetic:
         return partial_match
 
     return None
-=======
-def get_item_by_name(item_name : str) -> Cosmetic:
-    return Cosmetic.objects.filter(item_name__iexact=item_name).first()
->>>>>>> c2003430a6607cb4c801088d4043078675625782
 
 def get_item_price(item: Cosmetic) -> int:
     if not item:

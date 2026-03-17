@@ -92,17 +92,10 @@ def home_test(request):
             delete_message_id = request.POST.get("delete_message_id")
 
             if delete_message_id:
-<<<<<<< HEAD
-                msg = get_object_or_404(Message, id=delete_message_id, topic_key="home")
-                deleted = False
-
-                if request.user.is_authenticated and (request.user.is_staff or msg.author_id == request.user.id):
-=======
                 msg = get_object_or_404(Message, id=delete_message_id)
                 deleted = False
 
                 if request.user.is_staff or msg.author_id == request.user.id:
->>>>>>> c2003430a6607cb4c801088d4043078675625782
                     msg.delete()
                     deleted = True
 
