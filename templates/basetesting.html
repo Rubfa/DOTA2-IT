@@ -184,12 +184,18 @@
 
             <div class="header-right">
                     {% if user.is_authenticated %}
+<<<<<<< HEAD
                       <form method="post" action="{% url 'logout' %}?next=/test/" style="display:inline;">
                             {% csrf_token %}
                             <button type="submit" class="login btn btn-outline-dark btn-sm rounded-pill px-3">
                                 Logout
                             </button>
                         </form>
+=======
+                        <a href="{% url 'logout' %}?next={{ request.path }}" class="login btn btn-outline-dark btn-sm rounded-pill px-3">
+                            Logout
+                        </a>
+>>>>>>> c2003430a6607cb4c801088d4043078675625782
                     {% else %}
                         <a href="{% url 'login' %}" class="logout btn btn-dark btn-sm rounded-pill px-3">Login</a>
                     {% endif %}
