@@ -1,0 +1,322 @@
+{% extends 'basetesting.html' %}
+
+{% block title %}Mock Trading{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+        .page-title {
+            font-size: 42px;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1.4fr;
+            gap: 20px;
+            width: 100%;
+            box-sizing: border-box;
+            align-items: stretch;
+        }
+
+        .panel {
+            background-color: white;
+            border: 2px solid #333;
+            padding: 20px;
+            width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+        }
+
+        .panel-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 10px;
+            margin-bottom: 12px;
+        }
+
+        .balance-box {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+
+        .assets-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .asset-slot {
+            min-width: 0;
+            min-height: 70px;
+            border: 2px solid #444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 12px;
+            background-color: #fafafa;
+            padding: 4px;
+            margin: 0;
+            font-family: inherit;
+            line-height: 1.2;
+        }
+
+        .asset-slot-button {
+            cursor: pointer;
+        }
+
+        .asset-slot-button.is-selected {
+            background: #111;
+            color: #fff;
+            border-color: #111;
+        }
+
+        .asset-slot-empty {
+            color: #666;
+            cursor: default;
+        }
+
+        .asset-slot:disabled {
+            opacity: 1;
+        }
+
+        .chart-meta {
+            font-size: 14px;
+            color: #444;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .chart-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .chart-note {
+            font-size: 13px;
+            color: #555;
+            flex: 1;
+        }
+
+        .chart-toggle {
+            border: 2px solid #333;
+            background: #fff;
+            padding: 8px 12px;
+            font-size: 13px;
+            font-weight: bold;
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .chart-toggle.is-active {
+            background: #111;
+            color: #fff;
+        }
+
+        .chart-shell {
+            height: 330px;
+            border: 2px solid #444;
+            background: #fafafa;
+            padding: 12px;
+        }
+
+        .chart-empty {
+            height: 330px;
+            border: 2px dashed #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 22px;
+            color: #555;
+            margin-top: 20px;
+            padding: 20px;
+            width:100%;
+            box-sizing: border-box;
+        }
+
+        .trade-form {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            width: 100%;
+        }
+
+        .form-row {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+            min-width: 0;
+        }
+
+        .form-row label {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .form-row input {
+            width: 100%;
+            min-width: 0;
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #444;
+        }
+
+        .price-box {
+            min-width: 0;
+            min-height: 46px;
+            border: 2px solid #444;
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            font-size: 18px;
+            background-color: #fafafa;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .trade-button {
+            flex: 1;
+            min-width: 0;
+            padding: 14px 20px;
+            font-size: 22px;
+            font-weight: bold;
+            border: 2px solid #333;
+            background-color: white;
+            cursor: pointer;
+        }
+
+        .trade-button:hover {
+            background-color: #ececec;
+        }
+
+        .status-message {
+            padding: 12px;
+            border: 2px solid #444;
+            background-color: #fafafa;
+            font-size: 16px;
+        }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div id="mocktrade-page">
+    <div class="page-title">Mock Trading</div>
+
+    <div class="main-container">
+        <!-- Left Panel -->
+        <div class="panel">
+            <div class="panel-title">Account Information</div>
+            
+            <div class="section-title">Username</div>
+            <div class="balance-box">
+                {{ request.user.username }}
+            </div>
+
+            <div class="section-title">Account Balance</div>
+            <div class="balance-box">{{ balance }}</div>
+
+            <div class="section-title">Account Assets</div>
+            <div class="assets-grid">
+                {% for asset in assets %}
+                    <button
+                        type="button"
+                        class="asset-slot {% if asset %}asset-slot-button{% else %}asset-slot-empty{% endif %}"
+                        {% if asset %}
+                            data-item-id="{{ asset.id }}"
+                            data-item-name="{{ asset.item_name }}"
+                        {% else %}
+                            disabled
+                        {% endif %}
+                    >
+                        {% if asset %}
+                            {{ asset.item_name }}
+                        {% else %}
+                            Empty
+                        {% endif %}
+                    </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Center Panel -->
+        {% include "includes/mocktrade_chart_panel.html" %}
+
+        <!-- Right Panel -->
+        <div class="panel">
+            <div class="panel-title">Trading Zone</div>
+
+            <form class="trade-form" method="post" action="{% url 'mocktrade:index' %}">
+                {% csrf_token %}
+
+                <div class="form-row">
+                    <label for="item_name">Cosmetic Name</label>
+                    <input type="text" id="item_name" name="item_name" placeholder="Enter cosmetic name" value="{{ item_name }}">
+                </div>
+
+                <div class="form-row">
+                    <label>Cosmetic Price</label>
+                    <div class="price-box">
+                        {% if price %}
+                            {{ price }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="button-row">
+                    <button class="trade-button" type="submit" name="action" value="search">SEARCH PRICE</button>
+                </div>
+
+                <div class="button-row">
+                    <button class="trade-button" type="submit" name="action" value="buy">BUY</button>
+                    <button class="trade-button" type="submit" name="action" value="sell">SELL</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    </div>
+
+    <script>
+        (function () {
+            const storageKey = `mocktrade-scroll:${window.location.pathname}${window.location.search}`;
+            const page = document.getElementById("mocktrade-page");
+            const form = page ? page.querySelector(".trade-form") : null;
+
+            if (form) {
+                form.addEventListener("submit", () => {
+                    sessionStorage.setItem(storageKey, String(window.scrollY));
+                });
+            }
+
+            const savedScroll = sessionStorage.getItem(storageKey);
+            if (!savedScroll) {
+                return;
+            }
+
+            sessionStorage.removeItem(storageKey);
+            window.requestAnimationFrame(() => {
+                window.scrollTo(0, parseInt(savedScroll, 10));
+            });
+        })();
+    </script>
+{% endblock %}

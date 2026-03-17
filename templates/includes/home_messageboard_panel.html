@@ -1,0 +1,37 @@
+<div class="messageboard-container" data-home-messageboard="1">
+    <div class="page-title">Message Board</div>
+    <p class="messageboard-intro">
+        Share quick market observations, reply to classmates, and document trading ideas as the project evolves.
+    </p>
+
+    <div
+        class="messageboard-status messageboard-status--{{ messageboard_status_tone|default:'info' }}"
+        data-messageboard-status
+    >
+        {{ messageboard_status_message|default:"Use quick posts and threaded replies to explain why you bought, sold, or tracked a cosmetic." }}
+    </div>
+
+    {% if user.is_authenticated %}
+    <div class="post-box">
+        <form method="POST" action="{% url 'home_test' %}?panel=messageboard" class="post-form">
+            {% csrf_token %}
+            {{ form.text }}
+            <div class="counter" data-mb-counter>0/200</div>
+            <input type="hidden" name="parent_id" id="parent_id" value="">
+            <button type="submit" class="btn btn-dark rounded-pill px-4">Post Message</button>
+        </form>
+    </div>
+    {% else %}
+        <p class="messageboard-empty-state">You must login to post messages.</p>
+    {% endif %}
+
+    <div class="messages messageboard-feed">
+        {% if roots %}
+            {% for node in roots %}
+                {% include "messageboard/partial_recursive.html" with node=node depth=0 topic_key=topic_key %}
+            {% endfor %}
+        {% else %}
+            <p class="messageboard-empty-state">No messages yet.</p>
+        {% endif %}
+    </div>
+</div>

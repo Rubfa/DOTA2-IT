@@ -1,0 +1,44 @@
+{% extends "basetesting.html" %}
+{% load static %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'css/home_mocktrade.css' %}">
+    <link rel="stylesheet" href="{% static 'messageboard/messageboard.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <script src="{% static 'messageboard/message.js' %}" defer></script>
+    <script src="{% static 'js/home_panels.js' %}" defer></script>
+    <script src="{% static 'js/home_visualisation.js' %}" defer></script>
+    <script src="{% static 'js/home_mocktrade.js' %}" defer></script>
+{% endblock %}
+
+{% block content %}
+    <div class="home-upper">
+        {% include "includes/home_visualisation_panel.html" %}
+    </div>
+
+    <div class="home-lower" id="home-lower">
+        <div class="top-tabs" id="home-panel-tabs">
+            <a href="{% url 'home_test' %}?panel=messageboard#home-lower"
+            class="tab {% if panel == 'messageboard' %}active{% endif %}"
+            data-panel="messageboard">
+                Message board
+            </a>
+
+            <a href="{% url 'home_test' %}?panel=mocktrade#home-lower"
+            class="tab {% if panel == 'mocktrade' %}active{% endif %}"
+            data-panel="mocktrade">
+                Mock Trading
+            </a>
+        </div>
+
+        <div class="switch-content" id="home-switch-content" data-current-panel="{{ panel }}">
+            {% if panel == 'mocktrade' %}
+                {% include "includes/home_mocktrade_panel.html" %}
+            {% else %}
+                {% include "includes/home_messageboard_panel.html" %}
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+

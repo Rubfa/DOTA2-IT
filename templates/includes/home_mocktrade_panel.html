@@ -1,0 +1,80 @@
+<div id="home-mocktrade-panel">
+<div class="page-title">Mock Trading</div>
+
+<div class="main-container">
+    <div class="panel">
+        <div class="panel-title">Account Information</div>
+
+        <div class="section-title">Username</div>
+        <div class="balance-box">
+            {{ request.user.username }}
+        </div>
+
+        <div class="section-title">Account Balance</div>
+        <div class="balance-box">{{ balance }}</div>
+
+        <div class="section-title">Account Assets</div>
+        <div class="assets-grid">
+            {% for asset in assets %}
+                <button
+                    type="button"
+                    class="asset-slot {% if asset %}asset-slot-button{% else %}asset-slot-empty{% endif %}"
+                    {% if asset %}
+                        data-item-id="{{ asset.id }}"
+                        data-item-name="{{ asset.item_name }}"
+                    {% else %}
+                        disabled
+                    {% endif %}
+                >
+                    {% if asset %}
+                        {{ asset.item_name }}
+                    {% else %}
+                        Empty
+                    {% endif %}
+                </button>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% include "includes/mocktrade_chart_panel.html" %}
+
+    <div class="panel">
+        <div class="panel-title">Trading Zone</div>
+
+        <form class="trade-form" method="post" action="{% url 'home_test' %}?panel=mocktrade">
+            {% csrf_token %}
+
+            <div class="form-row">
+                <label for="item_name">Search cosmetic name</label>
+                <input type="text" id="item_name" name="item_name" placeholder="Enter cosmetic name" value="{{ item_name }}">
+            </div>
+
+            <div class="form-row">
+                <label>Cosmetic Price</label>
+                <div class="price-box" data-mocktrade-price-box>
+                    {% if price %}
+                        {{ price }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="button-row">
+                <button class="trade-button" type="submit" name="action" value="search">SEARCH PRICE</button>
+            </div>
+
+            <div class="button-row">
+                <button class="trade-button" type="submit" name="action" value="buy">BUY</button>
+                <button class="trade-button" type="submit" name="action" value="sell">SELL</button>
+            </div>
+
+            <div
+                class="status-message status-message--{{ trade_status_tone|default:'info' }}"
+                data-mocktrade-status
+            >
+                {{ trade_status_message|default:"Search a cosmetic to view the latest market price, then buy or sell without leaving the page." }}
+            </div>
+        </form>
+    </div>
+</div>

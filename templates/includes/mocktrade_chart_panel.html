@@ -1,0 +1,33 @@
+<div class="panel chart-panel">
+    <div class="panel-title">User Time-Balance Line Chart</div>
+
+    {% if portfolio_chart_data.labels %}
+        <div class="chart-toolbar">
+            <button type="button" id="mocktradePortfolioOverviewBtn" class="chart-toggle is-active">
+                Portfolio Overview
+            </button>
+            <div id="mocktradeChartNote" class="chart-note">
+                Click an asset on the left to switch the chart.
+            </div>
+        </div>
+        <div class="chart-meta">
+            <span id="mocktradeChartMetaText">
+                Tracked assets:
+                {% for asset_name in portfolio_chart_data.asset_names %}
+                    {% if not forloop.first %}, {% endif %}{{ asset_name }}
+                {% endfor %}
+            </span>
+        </div>
+        <div class="chart-shell">
+            <canvas id="mocktradePortfolioChart"></canvas>
+        </div>
+        {{ portfolio_chart_data|json_script:"mocktrade-portfolio-chart-data" }}
+        {{ asset_chart_data|json_script:"mocktrade-asset-chart-data" }}
+    {% else %}
+        <div class="chart-empty">
+            No assets with market history are available yet.
+            <br>
+            Buy a cosmetic first to generate the chart.
+        </div>
+    {% endif %}
+</div>

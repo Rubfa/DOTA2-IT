@@ -1,0 +1,106 @@
+<div class="hv-wrap" data-home-visualisation="1">
+    <div class="hv-heading">
+        <span class="hv-eyebrow">Market Explorer</span>
+        <h2 class="hv-title">Track hero cosmetics across time, price, and supply.</h2>
+        <p class="hv-description">
+            Filter heroes by role, search for specific cosmetics, and compare how market behaviour changes without leaving
+            the home page.
+        </p>
+        <div class="hv-feedback" data-hv-feedback>
+            Choose a hero or search for a cosmetic to update the chart.
+        </div>
+    </div>
+
+    <div class="hv-container">
+        <div class="hv-left">
+            <h3 class="hv-section-title">Hero Type</h3>
+            <div class="hv-button-row">
+                <button type="button" class="hv-control-button is-active" data-hv-hero-type="All">All</button>
+                <button type="button" class="hv-control-button" data-hv-hero-type="Strength">Strength</button>
+                <button type="button" class="hv-control-button" data-hv-hero-type="Agility">Agility</button>
+                <button type="button" class="hv-control-button" data-hv-hero-type="Intelligence">Intelligence</button>
+                <button type="button" class="hv-control-button" data-hv-hero-type="Universal">Universal</button>
+            </div>
+
+            <h3 class="hv-section-title">Search</h3>
+            <input
+                class="hv-search"
+                id="hvSearchHero"
+                placeholder="Search hero or cosmetic"
+                autocomplete="off"
+            >
+            <div id="hvSearchResults" class="hv-search-results"></div>
+
+            <h3 class="hv-section-title">Heroes</h3>
+            <div id="hvHeroGrid" class="hv-hero-grid">
+                {% for hero in heroes %}
+                    <button
+                        type="button"
+                        class="hv-hero-card"
+                        data-hero-id="{{ hero.id }}"
+                        data-hero-type="{{ hero.type }}"
+                        data-hero-name="{{ hero.name }}"
+                        title="{{ hero.name }}"
+                        aria-label="Open cosmetics for {{ hero.name }}"
+                    >
+                        <img
+                            src="{{ hero.icon }}"
+                            data-fallback-icon="{{ hero.fallback_icon|escapejs }}"
+                            alt="{{ hero.name }}"
+                        >
+                        <span class="hv-hero-name">{{ hero.name }}</span>
+                    </button>
+                {% endfor %}
+            </div>
+
+            <div class="hv-selected-box">
+                <h3 class="hv-section-title">Selected Cosmetics</h3>
+                <div id="hvSelectedList" class="hv-selected-list"></div>
+            </div>
+        </div>
+
+        <div class="hv-right">
+            <div class="hv-chart-top">
+                <div class="hv-chart-title-group">
+                    <h3>Line Chart</h3>
+                    <p class="hv-chart-caption" data-hv-chart-caption>
+                        The latest selected cosmetic will appear here with its market history.
+                    </p>
+                </div>
+            </div>
+
+            <div class="hv-chart-shell">
+                <canvas id="hvChart" width="700" height="350"></canvas>
+            </div>
+
+            <div class="hv-control-grid">
+                <div class="hv-control-card">
+                    <h3>Time Range</h3>
+                    <div class="hv-button-row mb-0">
+                        <button type="button" class="hv-control-button" data-hv-time-range="7d">7 Days</button>
+                        <button type="button" class="hv-control-button" data-hv-time-range="30d">30 Days</button>
+                        <button type="button" class="hv-control-button is-active" data-hv-time-range="365d">1 Year</button>
+                    </div>
+                </div>
+
+                <div class="hv-control-card">
+                    <h3>Chart Type</h3>
+                    <div class="hv-button-row mb-0">
+                        <button type="button" class="hv-control-button is-active" data-hv-chart-type="time-price">
+                            Time vs Price
+                        </button>
+                        <button type="button" class="hv-control-button" data-hv-chart-type="time-quantity">
+                            Time vs Quantity
+                        </button>
+                        <button type="button" class="hv-control-button" data-hv-chart-type="quantity-price">
+                            Quantity vs Price
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="hvPopup" class="hv-popup-host"></div>
+</div>
+{{ search_items|json_script:"home-visualization-search-items" }}

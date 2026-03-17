@@ -1,0 +1,53 @@
+<div class="msg">
+  <div class="meta">
+    <span class="name">{{ m.author.username }}</span>
+    <span class="time">{{ m.created_at|date:"Y-m-d H:i" }}</span>
+  </div>
+
+  <div class="body">{{ m.text|linebreaksbr }}</div>
+
+  <div class="actions">
+    {% if user.is_authenticated %}
+      <a href="#" class="reply-link" data-reply-to="{{ m.id }}">Reply</a>
+
+      {% if m.author == user or user.is_staff %}
+        <form method="post" action="{% url 'messageboard:delete_message' m.id %}" class="inline-form">
+          {% csrf_token %}
+          <button type="submit" class="messageboard-delete-button" data-confirm-delete="1">Delete</button>
+        </form>
+      {% endif %}
+    {% endif %}
+  </div>
+
+  {% if user.is_authenticated %}
+    <div class="inline-reply is-hidden" id="reply-box-{{ m.id }}">
+      <form method="post" action="{% url 'messageboard:post' topic_key %}" class="reply-form">
+        {% csrf_token %}
+        <textarea name="text" rows="2" maxlength="200" placeholder="Write a reply"></textarea>
+        <div class="counter" data-mb-counter>0/200</div>
+        <input type="hidden" name="parent_id" value="{{ m.id }}">
+        <button type="submit">Post Reply</button>
+        <button type="button" class="cancel-reply" data-cancel="{{ m.id }}">Cancel</button>
+      </form>
+    </div>
+  {% endif %}
+
+  <div class="replies">
+    {% for r in m.replies.all %}
+      <div class="reply">
+        <div class="meta">
+          <span class="name">{{ r.author.username }}</span>
+          <span class="time">{{ r.created_at|date:"Y-m-d H:i" }}</span>
+        </div>
+        <div class="body">{{ r.text|linebreaksbr }}</div>
+
+        {% if user.is_authenticated and r.author == user or user.is_staff %}
+          <form method="post" action="{% url 'messageboard:delete_message' r.id %}" class="inline-form">
+            {% csrf_token %}
+            <button type="submit" class="messageboard-delete-button" data-confirm-delete="1">Delete</button>
+          </form>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+</div>

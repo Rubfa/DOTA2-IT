@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Item Charts</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+    font-family: Arial, sans-serif;
+    margin:20px;
+}
+
+.row{
+    display:flex;
+    gap:14px;
+    align-items:center;
+    flex-wrap:wrap;
+}
+
+.chart-box{
+    max-width:1100px;
+    margin:20px 0;
+}
+
+canvas{
+    width:100% !important;
+}
+
+label{
+    font-weight:600;
+}
+
+.toggles label{
+    font-weight:500;
+    margin-right:14px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="row">
+
+<h1 style="margin:0;">Item {{ item_id }} Charts</h1>
+
+<label for="range">Time range:</label>
+
+<select id="range">
+
+<option value="7d">7 days</option>
+<option value="30d">30 days</option>
+<option value="all" selected>All</option>
+
+</select>
+
+<div class="toggles">
+
+<label>
+<input type="checkbox" id="showPriceTrend" checked>
+Show Price Trend
+</label>
+
+<label>
+<input type="checkbox" id="showQtyTrend" checked>
+Show Quantity Trend
+</label>
+
+</div>
+
+</div>
+
+
+<div class="chart-box">
+<h2>Price Over Time</h2>
+<canvas id="priceChart"></canvas>
+</div>
+
+
+<div class="chart-box">
+<h2>Quantity Over Time</h2>
+<canvas id="qtyChart"></canvas>
+</div>
+
+
+
+<script>
+
+const itemId = {{ item_id }};
+
+const rangeSelect = document.getElementById("range");
+const showPriceTrend = document.getElementById("showPriceTrend");
+const showQtyTrend = document.getElementById("showQtyTrend");
+
+let priceChart = null;
+let qtyChart = null;
+
+
+/* legend点击控制 */
+
+function legendToggleOnClick(e, legendItem, legend){
+
+const chart = legend.chart;
+const idx = legendItem.datasetIndex;
+
+chart.setDatasetVisibility(idx, !chart.isDatasetVisible(idx));
+chart.update();
+
+if(chart === priceChart && idx === 1){
+showPriceTrend.checked = chart.isDatasetVisible(1);
+}
+
+if(chart === qtyChart && idx === 1){
+showQtyTrend.checked = chart.isDatasetVisible(1);
+}
+
+}
+
+
+/* 获取API数据 */
+
+async function fetchData(range){
+
+const res = await fetch(`/api/items/${itemId}/history/?range=${range}`);
+
+if(!res.ok){
+console.error("API error");
+return {
+labels:[],
+prices:[],
+quantities:[],
+trend_price:[],
+trend_qty:[]
+};
+}
+
+return await res.json();
+
+}
+
+
+/* checkbox控制trend */
+
+function applyCheckboxVisibility(){
+
+if(priceChart){
+
+priceChart.setDatasetVisibility(1, showPriceTrend.checked);
+priceChart.update();
+
+}
+
+if(qtyChart){
+
+qtyChart.setDatasetVisibility(1, showQtyTrend.checked);
+qtyChart.update();
+
+}
+
+}
+
+
+/* 渲染图表 */
+
+async function render(range){
+
+const data = await fetchData(range);
+
+const trendPrice = data.trend_price ?? [];
+const trendQty = data.trend_qty ?? [];
+
+
+if(!priceChart){
+
+priceChart = new Chart(document.getElementById("priceChart"),{
+
+type:"line",
+
+data:{
+
+labels:data.labels,
+
+datasets:[
+
+{
+label:"Price",
+data:data.prices,
+borderColor:"#3498db",
+backgroundColor:"rgba(52,152,219,0.2)",
+borderWidth:2,
+pointRadius:3
+},
+
+{
+label:"Price Trend",
+data:trendPrice,
+borderColor:"#e74c3c",
+borderDash:[6,6],
+borderWidth:2,
+pointRadius:0
+}
+
+]
+
+},
+
+options:{
+responsive:true,
+plugins:{
+legend:{
+onClick:legendToggleOnClick
+}
+}
+}
+
+});
+
+
+qtyChart = new Chart(document.getElementById("qtyChart"),{
+
+type:"line",
+
+data:{
+
+labels:data.labels,
+
+datasets:[
+
+{
+label:"Quantity",
+data:data.quantities,
+borderColor:"#2ecc71",
+backgroundColor:"rgba(46,204,113,0.2)",
+borderWidth:2,
+pointRadius:3
+},
+
+{
+label:"Quantity Trend",
+data:trendQty,
+borderColor:"#f39c12",
+borderDash:[6,6],
+borderWidth:2,
+pointRadius:0
+}
+
+]
+
+},
+
+options:{
+responsive:true,
+plugins:{
+legend:{
+onClick:legendToggleOnClick
+}
+}
+}
+
+});
+
+applyCheckboxVisibility();
+
+return;
+
+}
+
+
+/* 更新图表 */
+
+priceChart.data.labels = data.labels;
+priceChart.data.datasets[0].data = data.prices;
+priceChart.data.datasets[1].data = trendPrice;
+priceChart.update();
+
+
+qtyChart.data.labels = data.labels;
+qtyChart.data.datasets[0].data = data.quantities;
+qtyChart.data.datasets[1].data = trendQty;
+qtyChart.update();
+
+applyCheckboxVisibility();
+
+}
+
+
+/* 监听 */
+
+rangeSelect.addEventListener("change",()=>render(rangeSelect.value));
+
+showPriceTrend.addEventListener("change",applyCheckboxVisibility);
+showQtyTrend.addEventListener("change",applyCheckboxVisibility);
+
+
+/* 初始加载 */
+
+render(rangeSelect.value);
+
+</script>
+
+</body>
+</html>

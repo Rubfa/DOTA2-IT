@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Dota Cosmetic Visualisation</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    margin: 40px;
+}
+
+.container {
+    display: flex;
+    gap: 40px;
+}
+
+.hero-panel {
+    width: 260px;
+}
+
+.hero-grid {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.hero-grid img {
+    width: 60px;
+    height: 60px;
+    margin: 5px;
+    cursor: pointer;
+    object-fit: cover;
+    object-position: center top;
+    border: 1px solid #d8dbe2;
+    background: #eef2f7;
+}
+
+.chart-panel {
+    flex: 1;
+}
+
+.selected-box {
+    margin-top: 20px;
+}
+
+button {
+    margin: 3px;
+    cursor: pointer;
+}
+
+.search {
+    width: 200px;
+    padding: 5px;
+    margin-bottom: 10px;
+}
+
+.search-results {
+    margin-bottom: 12px;
+    border: 1px solid #d6d6d6;
+    background: #fafafa;
+    min-height: 40px;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.search-results:empty {
+    display: none;
+}
+
+.search-result {
+    display: block;
+    width: 100%;
+    border: 0;
+    border-bottom: 1px solid #ececec;
+    background: transparent;
+    margin: 0;
+    padding: 8px 10px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.search-result:last-child {
+    border-bottom: 0;
+}
+
+.search-result small {
+    display: block;
+    color: #666;
+}
+
+.quick-nav {
+    margin: 16px 0 24px 0;
+    padding: 12px;
+    border: 1px solid #d6d6d6;
+    background: #f8f8f8;
+}
+
+.quick-nav input {
+    width: 120px;
+    padding: 4px;
+}
+</style>
+</head>
+<body>
+<h2>Dota Cosmetic Visualisation</h2>
+
+<div class="quick-nav">
+    <strong>Quick Navigation:</strong>
+    <button type="button" onclick="window.location.href='/'">Home</button>
+    <button type="button" onclick="window.location.href='/admin/'">Admin</button>
+    <input id="quickItemId" type="number" min="1" placeholder="item id">
+    <button type="button" onclick="openChartPage()">Open Chart Page</button>
+    <button type="button" onclick="openApiData()">Open API JSON</button>
+</div>
+
+<div class="container">
+    <div class="hero-panel">
+        <h3>Hero Type</h3>
+        <button onclick="filterHero('All')">All</button>
+        <button onclick="filterHero('Strength')">Strength</button>
+        <button onclick="filterHero('Agility')">Agility</button>
+        <button onclick="filterHero('Intelligence')">Intelligence</button>
+        <button onclick="filterHero('Universal')">Universal</button>
+
+        <h3>Search</h3>
+        <input class="search" id="searchHero" onkeyup="searchHero()" placeholder="search hero or cosmetic">
+        <div id="searchResults" class="search-results"></div>
+
+        <h3>Heroes</h3>
+        <div id="heroGrid" class="hero-grid">
+            {% for hero in heroes %}
+            <img src="{{ hero.icon }}"
+                 data-hero-id="{{ hero.id }}"
+                 data-type="{{ hero.type }}"
+                 data-name="{{ hero.name }}"
+                 title="{{ hero.name }}"
+                 alt="{{ hero.name }}"
+                 onerror="this.onerror=null;this.src='{{ hero.fallback_icon|escapejs }}';"
+                 onclick="selectHero({{ hero.id }}, '{{ hero.name|escapejs }}')">
+            {% endfor %}
+        </div>
+
+        <div class="selected-box">
+            <h3>Selected</h3>
+            <ul id="selectedList"></ul>
+        </div>
+    </div>
+
+    <div class="chart-panel">
+        <h3>Line Chart</h3>
+        <canvas id="chart" width="700" height="350"></canvas>
+
+        <h3>Time Range</h3>
+        <button onclick="setTime('7')">7 days</button>
+        <button onclick="setTime('30')">30 days</button>
+        <button onclick="setTime('365')">1 year</button>
+
+        <h3>Chart Type</h3>
+        <button onclick="loadChart('time-price')">time-price</button>
+        <button onclick="loadChart('time-quantity')">time-quantity</button>
+        <button onclick="loadChart('quantity-price')">quantity-price</button>
+    </div>
+</div>
+
+<div id="popup"></div>
+{{ search_items|json_script:"visualization-search-items" }}
+
+<script>
+let myChart = null;
+let currentItemId = null;
+let currentTimeRange = "365d";
+let currentChartType = "time-price";
+let currentItemLabel = "";
+let selectedItems = [];
+let currentHeroType = "All";
+const searchItems = JSON.parse(document.getElementById("visualization-search-items").textContent);
+
+function normalizeText(value) {
+    return String(value || "").toLowerCase();
+}
+
+function getCosmeticsForHero(heroId) {
+    return searchItems.filter(item => item.hero_id === heroId);
+}
+
+function heroMatchesQuery(heroId, heroName, query) {
+    if (!query) {
+        return true;
+    }
+
+    if (normalizeText(heroName).includes(query)) {
+        return true;
+    }
+
+    return searchItems.some(item =>
+        item.hero_id === heroId &&
+        (normalizeText(item.name).includes(query) || normalizeText(item.hero_name).includes(query))
+    );
+}
+
+function renderSearchResults(query) {
+    const container = document.getElementById("searchResults");
+    container.innerHTML = "";
+
+    if (!query) {
+        return;
+    }
+
+    const matches = searchItems
+        .filter(item =>
+            normalizeText(item.hero_name).includes(query) ||
+            normalizeText(item.name).includes(query)
+        )
+        .slice(0, 12);
+
+    if (matches.length === 0) {
+        container.innerHTML = '<div class="search-result">No matching cosmetics.</div>';
+        return;
+    }
+
+    matches.forEach(item => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "search-result";
+        button.innerHTML = `${item.name}<small>${item.hero_name} | ${item.hero_type}</small>`;
+        button.addEventListener("click", () => {
+            selectCosmetic(item.id, item.hero_name, item.name);
+            document.getElementById("searchHero").value = item.name;
+            renderSearchResults("");
+            applyHeroFilters();
+        });
+        container.appendChild(button);
+    });
+}
+
+function getQuickItemId() {
+    const raw = document.getElementById("quickItemId").value;
+    const itemId = parseInt(raw, 10);
+
+    if (!Number.isInteger(itemId) || itemId <= 0) {
+        alert("Please enter a valid item id.");
+        return null;
+    }
+
+    return itemId;
+}
+
+function openChartPage() {
+    const itemId = getQuickItemId();
+    if (!itemId) {
+        return;
+    }
+    window.location.href = `/items/${itemId}/chart/`;
+}
+
+function openApiData() {
+    const itemId = getQuickItemId();
+    if (!itemId) {
+        return;
+    }
+    window.open(`/api/items/${itemId}/history/?range=365d`, "_blank");
+}
+
+function applyHeroFilters() {
+    const input = normalizeText(document.getElementById("searchHero").value);
+    const heroGrid = document.getElementById("heroGrid");
+    const images = heroGrid.getElementsByTagName("img");
+
+    for (let i = 0; i < images.length; i++) {
+        const heroId = parseInt(images[i].getAttribute("data-hero-id"), 10);
+        const heroName = images[i].getAttribute("data-name");
+        const heroType = images[i].getAttribute("data-type");
+        const matchesSearch = heroMatchesQuery(heroId, heroName, input);
+        const matchesType = currentHeroType === "All" || heroType === currentHeroType;
+
+        images[i].style.display = matchesSearch && matchesType ? "" : "none";
+    }
+}
+
+function searchHero() {
+    applyHeroFilters();
+    renderSearchResults(normalizeText(document.getElementById("searchHero").value));
+}
+
+function filterHero(type) {
+    currentHeroType = type;
+    applyHeroFilters();
+}
+
+function selectHero(heroId, heroName) {
+    const cosmetics = getCosmeticsForHero(heroId);
+
+    if (cosmetics.length === 0) {
+        alert("This hero has no cosmetic data yet.");
+        return;
+    }
+
+    let html = `<div style="position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+                background:white; padding:20px; border:2px solid #333; z-index:1000;">
+                <h3>Select a cosmetic for ${heroName}</h3>
+                <ul style="list-style:none; padding:0;">`;
+
+    cosmetics.forEach(cosmetic => {
+        html += `<li style="padding:5px; cursor:pointer;"
+                 onclick="selectCosmetic(${cosmetic.id}, '${heroName}', '${String(cosmetic.name).replace(/'/g, "\\'")}')">
+                 ${cosmetic.name}
+                 </li>`;
+    });
+
+    html += `</ul>
+            <button onclick="closePopup()">Close</button>
+            </div>
+            <div onclick="closePopup()"
+            style="position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(0,0,0,0.5); z-index:999;"></div>`;
+
+    document.getElementById("popup").innerHTML = html;
+}
+
+function selectCosmetic(cosmeticId, heroName, cosmeticName) {
+    currentItemId = cosmeticId;
+    currentItemLabel = `${heroName} - ${cosmeticName}`;
+
+    const item = { id: cosmeticId, hero: heroName, name: cosmeticName };
+    const exists = selectedItems.find(selected => selected.id === cosmeticId);
+
+    if (!exists) {
+        selectedItems.push(item);
+        updateSelectedList();
+    }
+
+    closePopup();
+    loadChart(currentChartType);
+}
+
+function updateSelectedList() {
+    const list = document.getElementById("selectedList");
+    list.innerHTML = "";
+
+    selectedItems.forEach(item => {
+        const li = document.createElement("li");
+        li.textContent = `${item.hero} - ${item.name}`;
+        list.appendChild(li);
+    });
+}
+
+function closePopup() {
+    document.getElementById("popup").innerHTML = "";
+}
+
+function setTime(days) {
+    if (days === "7") {
+        currentTimeRange = "7d";
+    } else if (days === "30") {
+        currentTimeRange = "30d";
+    } else if (days === "365") {
+        currentTimeRange = "365d";
+    } else {
+        currentTimeRange = "all";
+    }
+
+    if (currentItemId) {
+        loadChart(currentChartType);
+    }
+}
+
+function loadChart(chartType) {
+    if (!currentItemId) {
+        alert("Please select a hero cosmetic first.");
+        return;
+    }
+
+    currentChartType = chartType;
+
+    fetch(`/api/items/${currentItemId}/history/?range=${currentTimeRange}`)
+        .then(response => response.json())
+        .then(data => {
+            if (!Array.isArray(data.labels) || data.labels.length === 0) {
+                alert("No market data found for this cosmetic.");
+                return;
+            }
+
+            const ctx = document.getElementById("chart").getContext("2d");
+
+            if (myChart) {
+                myChart.destroy();
+            }
+
+            const chartConfig = {
+                type: "line",
+                data: {},
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: true },
+                        title: { display: true, text: `${currentItemLabel} | ${chartType.toUpperCase()}` }
+                    }
+                }
+            };
+
+            if (chartType === "time-price") {
+                chartConfig.data = {
+                    labels: data.labels,
+                    datasets: [
+                        {
+                            label: "Price",
+                            data: data.prices,
+                            borderColor: "rgb(75, 192, 192)",
+                            pointRadius: 2,
+                            tension: 0.1
+                        },
+                        {
+                            label: "Price Trend",
+                            data: data.trend_price,
+                            borderColor: "rgb(255, 99, 132)",
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            tension: 0.1
+                        }
+                    ]
+                };
+            } else if (chartType === "time-quantity") {
+                chartConfig.data = {
+                    labels: data.labels,
+                    datasets: [
+                        {
+                            label: "Quantity",
+                            data: data.quantities,
+                            borderColor: "rgb(54, 162, 235)",
+                            pointRadius: 0,
+                            stepped: true,
+                            tension: 0
+                        },
+                        {
+                            label: "Quantity Trend",
+                            data: data.trend_qty,
+                            borderColor: "rgb(255, 159, 64)",
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            tension: 0.1
+                        }
+                    ]
+                };
+            } else if (chartType === "quantity-price") {
+                chartConfig.type = "scatter";
+                chartConfig.data = {
+                    datasets: [{
+                        label: "Quantity vs Price",
+                        data: data.quantities.map((quantity, index) => ({
+                            x: quantity,
+                            y: data.prices[index]
+                        })),
+                        backgroundColor: "rgb(153, 102, 255)"
+                    }]
+                };
+                chartConfig.options.scales = {
+                    x: { title: { display: true, text: "Quantity" } },
+                    y: { title: { display: true, text: "Price" } }
+                };
+            }
+
+            myChart = new Chart(ctx, chartConfig);
+        })
+        .catch(error => {
+            console.error("Error loading chart:", error);
+            alert("Failed to load chart data.");
+        });
+}
+
+function initDefaultChart() {
+    if (searchItems.length === 0) {
+        return;
+    }
+
+    const firstItem = searchItems[0];
+    selectCosmetic(firstItem.id, firstItem.hero_name, firstItem.name);
+}
+
+applyHeroFilters();
+initDefaultChart();
+</script>
+</body>
+</html>
