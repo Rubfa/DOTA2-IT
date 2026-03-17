@@ -78,9 +78,6 @@
     const storageKey = `mocktrade-scroll:${window.location.pathname}${window.location.search}`;
     const panel = document.getElementById("home-mocktrade-panel");
     const form = panel ? panel.querySelector(".trade-form") : null;
-    const itemInput = form ? form.querySelector("#item_name") : null;
-    const priceBox = form ? form.querySelector(".price-box") : null;
-    const searchButton = form ? form.querySelector('button[name="action"][value="search"]') : null;
 
     const savedScroll = sessionStorage.getItem(storageKey);
     if (!savedScroll) {
@@ -92,14 +89,47 @@
         });
     }
 
-    if (!form || !searchButton || !itemInput || !priceBox) {
+    if (!panel || !form) {
         return;
     }
 
-    async function runAsyncSearch() {
+    function activateScripts(container) {
+        const scripts = Array.from(container.querySelectorAll("script"));
+
+        scripts.forEach((oldScript) => {
+            const newScript = document.createElement("script");
+
+            Array.from(oldScript.attributes).forEach((attribute) => {
+                newScript.setAttribute(attribute.name, attribute.value);
+            });
+
+            newScript.textContent = oldScript.textContent;
+            oldScript.parentNode.replaceChild(newScript, oldScript);
+        });
+    }
+
+    function replacePanelHtml(html, scrollY) {
+        const wrapper = document.createElement("div");
+        wrapper.innerHTML = html.trim();
+
+        const nextPanel = wrapper.firstElementChild;
+        if (!nextPanel) {
+            return;
+        }
+
+        panel.replaceWith(nextPanel);
+        activateScripts(nextPanel);
+        window.requestAnimationFrame(() => {
+            window.scrollTo(0, scrollY);
+        });
+    }
+
+    async function runAsyncAction(action, submitter) {
         const formData = new FormData(form);
-        formData.set("action", "search");
-        searchButton.disabled = true;
+        const currentScroll = window.scrollY;
+
+        formData.set("action", action);
+        submitter.disabled = true;
 
         try {
             const response = await fetch(form.action, {
@@ -114,24 +144,24 @@
             }
 
             const payload = await response.json();
-            priceBox.textContent = payload.price || "-";
-            if (payload.item_name) {
-                itemInput.value = payload.item_name;
+            if (!payload.html) {
+                throw new Error("Missing HTML payload.");
             }
+
+            replacePanelHtml(payload.html, currentScroll);
         } catch (error) {
-            console.error("Search price request failed.", error);
-            priceBox.textContent = "Search failed";
+            console.error("Mock trading request failed.", error);
         } finally {
-            searchButton.disabled = false;
+            submitter.disabled = false;
         }
     }
 
     form.addEventListener("submit", (event) => {
         const submitter = event.submitter;
 
-        if (submitter && submitter.value === "search") {
+        if (submitter && ["search", "buy", "sell"].includes(submitter.value)) {
             event.preventDefault();
-            runAsyncSearch();
+            runAsyncAction(submitter.value, submitter);
             return;
         }
 
