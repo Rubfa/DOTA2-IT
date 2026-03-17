@@ -15,6 +15,12 @@
             height: 450px;
             min-width: 0;
             box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        .chart-panel {
+            display: flex;
+            flex-direction: column;
         }
 
         .panel-title {
@@ -117,14 +123,24 @@
         }
 
         .chart-shell {
-            height: 330px;
+            flex: 1;
+            min-height: 0;
             border: 2px solid #444;
             background: #fafafa;
             padding: 12px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .chart-shell canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
         }
 
         .chart-empty {
-            height: 330px;
+            flex: 1;
+            min-height: 0;
             border: 2px dashed #666;
             display: flex;
             align-items: center;
@@ -132,9 +148,8 @@
             text-align: center;
             font-size: 22px;
             color: #555;
-            margin-top: 20px;
             padding: 20px;
-            width:100%;
+            width: 100%;
             box-sizing: border-box;
         }
 
